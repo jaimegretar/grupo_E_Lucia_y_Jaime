@@ -37,3 +37,5 @@ Islandia_suicidio_json <- fromJSONstat("INPUT/DATA/Islandia/Salud/suicidios_isla
 df <- as.data.frame(Islandia_suicidio_json)
 View(df)
 str(df)
+
+
