@@ -25,12 +25,32 @@ Arizona_temp_csv <- read_delim(file="INPUT/DATA/Arizona/Temperatura/data.csv", d
 View(Arizona_temp_csv)
 
 # Importacion .csv datos suicidios de Arizona (relacionado con salud mental)
-Arizona_suicidioRegion_csv <- read_delim(file="INPUT/DATA/Arizona/Salud/HDPulse_data_export.csv", delim = ",")
-view(Arizona_suicidioRegion_csv)
+Arizona_suicidioRegion_csv <- read_csv(
+  file = "INPUT/DATA/Arizona/Salud/HDPulse_data_export.csv",
+  col_names = c(
+    "Region",
+    "FIPS",
+    "Death_Rate",
+    "CI_Lower",
+    "CI_Upper",
+    "Num_Deaths",
+    "Trend",
+    "Annual_Change",
+    "CI_Lower_Change",
+    "CI_Upper_Change"
+  ),
+  skip = 1,              # Saltar la fila de encabezado defectuosa
+  trim_ws = TRUE,
+  show_col_types = FALSE
+)
+
+View(Arizona_suicidioRegion_csv)
 
 # Importacion .csv datos suicidios de Arizona (relacionado con salud mental)
-Arizona_suicidio2_csv <- read_delim(file="INPUT/DATA/Arizona/Salud/reports-data-export.csv", delim = ",")
-view(Arizona_suicidio2_csv)
+
+
+
+
 
 # Importacion .json datos suicidios de Islandia (relacionado con salud mental)
 Islandia_suicidio_json <- fromJSONstat("INPUT/DATA/Islandia/Salud/suicidios_islandia.json")
