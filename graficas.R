@@ -34,6 +34,23 @@ graf_suicHF_isl <- ggplot(df_sexo, aes(x = Year, y = value, color = Sex, group =
 print(graf_suicHF_isl)
 #------------------------------------------------------------------------------
 #Grafica de temperatura de Isalandia:
+df_temp <- Islandia_temp_json %>%
+  spread_all() %>%
+  select(fecha, temperatura_media) %>%
+  mutate(
+    fecha = as.Date(fecha),
+    temperatura_media = as.numeric(temperatura_media),
+    año = year(fecha),
+    mes = month(fecha, label = TRUE, abbr = FALSE),
+    mes_num = month(fecha),
+    estacion = case_when(
+      mes_num %in% c(12, 1, 2) ~ "Invierno",
+      mes_num %in% c(3, 4, 5) ~ "Primavera",
+      mes_num %in% c(6, 7, 8) ~ "Verano",
+      mes_num %in% c(9, 10, 11) ~ "Otoño"
+    )
+  )
+
 df_resumen <- df_temp %>%
   group_by(año, estacion) %>%
   summarise(
