@@ -3,11 +3,19 @@
 library(tidyverse)
 library(rjstat)
 library(jsonlite)
+install.packages("plotly")
 library(plotly)
 library(lubridate)
 
+#Grafica suicidios en Islandia
+df_clean <- df
+
 df_sexo <- df_clean %>%
   filter(Age == "Total", Sex != "Total")
+
+df_sexo <- df %>%
+  filter(Age == "Total", Sex != "Total")
+
 
 graf_suicHF_isl <- ggplot(df_sexo, aes(x = Year, y = value, color = Sex, group = Sex)) +
   geom_line(size = 1.2) +
