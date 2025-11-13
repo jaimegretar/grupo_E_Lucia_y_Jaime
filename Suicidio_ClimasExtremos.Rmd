@@ -5,3 +5,19 @@ date: Sys.Date()
 output: html_document
 ---
 
+# INTRODUCCIÓN
+**Islandia** se caracteriza por su clima frio y extremo, además de por la escasa cantidad de luz durante gran parte del año. En cambio, **Arizona** tiene un clima cálido y seco, con abundante luz solar la mayor parte del tiempo.
+Estos dos lugares, con climas tan extremos y distintos, permiten evaluar de manera comparativa como diferentes condiciones climáticas pueden influir en la **salud mental** y en la tasa de **suicidios**.
+
+# OBJETIVOS
+##Objetivo general
+Analizar la posible relación entre las condiciones climáticas y la salud mental, evaluando como el clima podría influir en la tasa de suicidios en Islandia y Arizona.
+
+#Objetivos especificos
+- Comparar la tasa de suicidios en Islandia y Arizona en relación con sus caracteristicas climáticas.
+- Comparar las tasas de suicidios entre hombres y mujeres en ambos lugares
+- 
+
+#METODOLOGÍA
+
+
