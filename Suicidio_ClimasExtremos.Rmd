@@ -85,6 +85,29 @@ Arizona_suicidioRegion_csv <- read_csv(
 
 View(Arizona_suicidioRegion_csv)
 ```
+Otro archivo .csv para complementar los datos de suicidios de Arizona desde el 2018-2023.
+```{r}
+# Importacion suicidios Arizona 2 del 2018 al 2023
+datos2 <- read.csv("INPUT/DATA/Arizona/Salud/reports-data-export.csv",
+                   header = TRUE,
+                   stringsAsFactors = FALSE)
+
+# Usar una expresión regular sofisticada para separar respetando las comillas
+datos_separados <- datos2 %>%
+  mutate(linea = .[[1]]) %>%
+  separate(linea,
+           into = c("Intent", "Year", "Age_Group", "Sex", "Deaths",
+                    "Population", "Crude_Rate", "Age_Adjusted_Rate",
+                    "Years_Potential_Life_Lost"),
+           sep = ',(?=(?:[^"]*"[^"]*")*[^"]*$)', # Separar por comas fuera de comillas
+           extra = "merge") %>%
+  mutate(across(everything(), ~str_replace_all(., '"', ''))) %>% # Quitar comillas
+  select(-1) # Eliminar la primera columna original
+
+# Ver resultado
+head(datos_separados)
+str(datos_separados)
+```
 #### Islandia:
 Importamos los datos de suicidios de Islandia desde un archivo JSON con formato JSON-stat.
 ```{r}
