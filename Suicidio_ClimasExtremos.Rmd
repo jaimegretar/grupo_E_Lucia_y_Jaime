@@ -12,17 +12,17 @@ output: html_document:
 Estos dos lugares, con climas tan extremos y distintos, permiten evaluar de manera comparativa como diferentes condiciones climáticas pueden influir en la **salud mental** y en la tasa de **suicidios**.
 
 # OBJETIVOS
-##Objetivo general
+## Objetivo general
 Analizar la posible relación entre las condiciones climáticas y la salud mental, evaluando como el clima podría influir en la tasa de suicidios en Islandia y Arizona.
 
-#Objetivos especificos
+# Objetivos especificos
 - Comparar la tasa de suicidios en Islandia y Arizona en relación con sus caracteristicas climáticas.
 - Comparar las tasas de suicidios entre hombres y mujeres en ambos lugares
 - Estudiar el impacto de episodios extremos de temperatura con suicidios posteriores a ellos.
 - Analizar efectos estacionales en las tasas de suicidios.
 
-#METODOLOGÍA
-##Carga de paquetes:
+# METODOLOGÍA
+## Carga de paquetes:
 A continuación se encuentran los paquetes empleados para cargar y trabajar con los datos del seminario.
 ```{r setup, message=FALSE, warning=FALSE}
 
@@ -36,9 +36,9 @@ library(tidyjson)
 library(plotly)
 library(dplyr)
 ```
-##Obtención de datos de temperatura y suicidio (Islandia y Arizona)
-###Importacion de datos de temperatura:
-####Arizona:
+## Obtención de datos de temperatura y suicidio (Islandia y Arizona)
+### Importacion de datos de temperatura:
+#### Arizona:
 Obtenemos los datos de temperatura de Arizona, desde un archivo .csv y desde un archivo .json
 ```{r}
 # Importacion datos temperatura Arizona .json
@@ -51,7 +51,7 @@ Arizona_temp_json %>%
 Arizona_temp_csv <- read_delim(file="INPUT/DATA/Arizona/Temperatura/data.csv", delim = ",")
 View(Arizona_temp_csv)
 ```
-####Islandia:
+#### Islandia:
 Importacion de los datos de temperatura de Islandia (Reikiavik) en .json, en el periodo del 2018-2023:
 ```{r}
 # Importacion datos temperatura Islandia .json
@@ -60,8 +60,8 @@ Islandia_temp_json %>%
   spread_all() %>%
   View()
 ```
-###Importacion de datos de suicidios:
-####Arizona:
+### Importacion de datos de suicidios:
+#### Arizona:
 Importamos los datos de suicidios de Arizona (relacionados con salud mental) desde un archivo CSV. Se especifican los nombres de las columnas y se salta la fila de encabezado defectuosa.
 ```{r}
 Arizona_suicidioRegion_csv <- read_csv(
@@ -85,7 +85,7 @@ Arizona_suicidioRegion_csv <- read_csv(
 
 View(Arizona_suicidioRegion_csv)
 ```
-####Islandia:
+#### Islandia:
 Importamos los datos de suicidios de Islandia desde un archivo JSON con formato JSON-stat.
 ```{r}
 # Importacion .json datos suicidios de Islandia (relacionado con salud mental)
