@@ -104,4 +104,3 @@ df <- as.data.frame(Islandia_suicidio_json)
 View(df)
 str(df)
 
-
