@@ -22,7 +22,7 @@ Analizar la posible relación entre las condiciones climáticas y la salud menta
 - Analizar efectos estacionales en las tasas de suicidios.
 
 # METODOLOGÍA
-## Carga de paquetes:
+## 1.1. Carga de paquetes:
 A continuación se encuentran los paquetes empleados para cargar y trabajar con los datos del seminario.
 ```{r setup, message=FALSE, warning=FALSE}
 
@@ -36,8 +36,8 @@ library(tidyjson)
 library(plotly)
 library(dplyr)
 ```
-## Obtención de datos de temperatura y suicidio (Islandia y Arizona)
-### Importacion de datos de temperatura:
+## 1.2. Obtención de datos de temperatura y suicidio (Islandia y Arizona)
+### 1.2.1 Importacion de datos de temperatura:
 #### Arizona:
 Obtenemos los datos de temperatura de Arizona, desde un archivo .csv y desde un archivo .json
 ```{r}
@@ -60,7 +60,7 @@ Islandia_temp_json %>%
   spread_all() %>%
   View()
 ```
-### Importacion de datos de suicidios:
+### 1.2.2. Importacion de datos de suicidios:
 #### Arizona:
 Importamos los datos de suicidios de Arizona (relacionados con salud mental) desde un archivo CSV. Se especifican los nombres de las columnas y se salta la fila de encabezado defectuosa.
 ```{r}
@@ -84,6 +84,29 @@ Arizona_suicidioRegion_csv <- read_csv(
 )
 
 View(Arizona_suicidioRegion_csv)
+```
+Otro archivo .csv para complementar los datos de suicidios de Arizona desde el 2018-2023.
+```{r}
+# Importacion suicidios Arizona 2 del 2018 al 2023
+datos2 <- read.csv("INPUT/DATA/Arizona/Salud/reports-data-export.csv",
+                   header = TRUE,
+                   stringsAsFactors = FALSE)
+
+# Usar una expresión regular sofisticada para separar respetando las comillas
+datos_separados <- datos2 %>%
+  mutate(linea = .[[1]]) %>%
+  separate(linea,
+           into = c("Intent", "Year", "Age_Group", "Sex", "Deaths",
+                    "Population", "Crude_Rate", "Age_Adjusted_Rate",
+                    "Years_Potential_Life_Lost"),
+           sep = ',(?=(?:[^"]*"[^"]*")*[^"]*$)', # Separar por comas fuera de comillas
+           extra = "merge") %>%
+  mutate(across(everything(), ~str_replace_all(., '"', ''))) %>% # Quitar comillas
+  select(-1) # Eliminar la primera columna original
+
+# Ver resultado
+head(datos_separados)
+str(datos_separados)
 ```
 #### Islandia:
 Importamos los datos de suicidios de Islandia desde un archivo JSON con formato JSON-stat.
