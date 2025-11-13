@@ -19,6 +19,11 @@ Arizona_temp_json %>%
 Arizona_temp_csv <- read_delim(file="INPUT/DATA/Arizona/Temperatura/data.csv", delim = ",")
 View(Arizona_temp_csv)
 
+Arizona_temp_filtrado <- Arizona_temp_csv %>%
+  filter(Date >= 201801 & Date <= 202312)
+
+View(Arizona_temp_filtrado)
+
 # Importacion datos temperatura Arizona .json
 Islandia_temp_json <- fromJSON(file = "INPUT/DATA/Islandia/Temperatura/temperatura_reykjavik_2018_2023.json")
 Islandia_temp_json %>%
