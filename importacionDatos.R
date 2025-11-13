@@ -58,4 +58,18 @@ df <- as.data.frame(Islandia_suicidio_json)
 View(df)
 str(df)
 
+df_filtered <- df %>%
+  mutate(Year = as.numeric(Year)) %>%
+  filter(Year >= 2018 & Year <= 2023)
 
+# Verificar el resultado
+str(df_filtered)
+summary(df_filtered$Year)
+
+# Ver años únicos
+unique(df_filtered$Year)
+
+# Contar observaciones por año
+df_filtered %>%
+  count(Year)
+view(df_filtered)
