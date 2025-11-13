@@ -1,0 +1,7 @@
+---
+title: "Suicidio y climas extremos"
+author: Jaime Miguel y Lucía Toimil
+date: Sys.Date()
+output: html_document
+---
+
