@@ -340,7 +340,7 @@ view(suicidios_Islandia)
 # GRÁFICAS
 A continuación se muestran las gráficas obtenidas a partir de los datos importados y filtrados. 
 ## 2.1. Gráficas individuales
-Primeramente se obtuveron gráficas individuales para cada lugar con respecto a la variacion de temperatura y suicidios.
+Primeramente se obtuveron gráficas individuales para cada lugar con respecto a la variación de temperatura y suicidios.
 ### 2.1.1. Gráficas de suicidios
 Se generaron gráficas que muestran la tasa de suicidios por año enfrentando hombres (azul) y mujeres (rojo).
 #### Arizona:
@@ -392,6 +392,106 @@ graf_suicHF_isl <- ggplot(df_sexo, aes(x = Year, y = value, color = Sex, group =
 print(graf_suicHF_isl)
 ```
 ### 2.1.2. Gráficas de temperatura
+Se generaron gráficas que muestran la media de las temperaturas (medida en grados Celsius) por sepearandolas por estaciones.
 #### Arizona:
+```{r}
+# Gráfica de temperatura en Arizona
+df_temp_arizona <- Arizona_temp_filtrado %>%
+  mutate(
+    # Crear fecha para extraer mes y estación
+    fecha = as.Date(paste(Year, Month, "01", sep = "-")),
+    mes = month(fecha, label = TRUE, abbr = FALSE),
+    estacion = case_when(
+      Month %in% c(12, 1, 2) ~ "Invierno",
+      Month %in% c(3, 4, 5) ~ "Primavera",
+      Month %in% c(6, 7, 8) ~ "Verano",
+      Month %in% c(9, 10, 11) ~ "Otoño"
+    )
+  )
+
+# Resumen por año y estación
+df_resumen_arizona <- df_temp_arizona %>%
+  group_by(Year, estacion) %>%
+  summarise(
+    temp_media = mean(Value, na.rm = TRUE),
+    temp_max = max(Value, na.rm = TRUE),
+    temp_min = min(Value, na.rm = TRUE)
+  ) %>%
+  mutate(estacion = factor(estacion, levels = c("Invierno", "Primavera", "Verano", "Otoño")))
+
+# Gráfico de temperatura
+graf_temp_arizona <- ggplot(df_resumen_arizona, aes(x = as.factor(Year), y = temp_media, fill = estacion)) +
+  geom_col(position = "dodge", width = 0.7) +
+  scale_fill_manual(
+    values = c("Invierno" = "#3498db", "Primavera" = "#2ecc71", 
+               "Verano" = "#f39c12", "Otoño" = "#e67e22")
+  ) +
+  labs(
+    title = "Temperatura Media por Año y Estación",
+    subtitle = "Arizona 2018-2023",
+    x = "Año",
+    y = "Temperatura Media (°C)",
+    fill = "Estación"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    plot.title = element_text(face = "bold", size = 16),
+    legend.position = "top",
+    panel.grid.minor = element_blank()
+  )
+
+print(graf_temp_arizona)
+```
 #### Islandia:
+```{r}
+#Grafica de temperatura de Isalandia:
+df_temp <- Islandia_temp_json %>%
+  spread_all() %>%
+  select(fecha, temperatura_media) %>%
+  mutate(
+    fecha = as.Date(fecha),
+    temperatura_media = as.numeric(temperatura_media),
+    año = year(fecha),
+    mes = month(fecha, label = TRUE, abbr = FALSE),
+    mes_num = month(fecha),
+    estacion = case_when(
+      mes_num %in% c(12, 1, 2) ~ "Invierno",
+      mes_num %in% c(3, 4, 5) ~ "Primavera",
+      mes_num %in% c(6, 7, 8) ~ "Verano",
+      mes_num %in% c(9, 10, 11) ~ "Otoño"
+    )
+  )
+
+df_resumen <- df_temp %>%
+  group_by(año, estacion) %>%
+  summarise(
+    temp_media = mean(temperatura_media, na.rm = TRUE),
+    temp_max = max(temperatura_media, na.rm = TRUE),
+    temp_min = min(temperatura_media, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  mutate(estacion = factor(estacion, levels = c("Invierno", "Primavera", "Verano", "Otoño")))
+
+graf_temp_islandia <- ggplot(df_resumen, aes(x = as.factor(año), y = temp_media, fill = estacion)) +
+  geom_col(position = "dodge", width = 0.7) +
+  scale_fill_manual(
+    values = c("Invierno" = "#3498db", "Primavera" = "#2ecc71", 
+               "Verano" = "#f39c12", "Otoño" = "#e67e22")
+  ) +
+  labs(
+    title = "Temperatura Media por Año y Estación",
+    subtitle = "Reykjavik 2018-2023",
+    x = "Año",
+    y = "Temperatura Media (°C)",
+    fill = "Estación"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    plot.title = element_text(face = "bold", size = 16),
+    legend.position = "top",
+    panel.grid.minor = element_blank()
+  )
+
+print(graf_temp_islandia)
+```
 ## 2.2. Gráficas combinadas/comparativas

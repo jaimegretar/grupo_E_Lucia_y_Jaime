@@ -57,7 +57,7 @@ df_resumen <- df_temp %>%
   ) %>%
   mutate(estacion = factor(estacion, levels = c("Invierno", "Primavera", "Verano", "Otoño")))
 
-p2 <- ggplot(df_resumen, aes(x = as.factor(año), y = temp_media, fill = estacion)) +
+graf_temp_islandia <- ggplot(df_resumen, aes(x = as.factor(año), y = temp_media, fill = estacion)) +
   geom_col(position = "dodge", width = 0.7) +
   scale_fill_manual(
     values = c("Invierno" = "#3498db", "Primavera" = "#2ecc71", 
@@ -77,7 +77,7 @@ p2 <- ggplot(df_resumen, aes(x = as.factor(año), y = temp_media, fill = estacio
     panel.grid.minor = element_blank()
   )
 
-print(p2)
+print(graf_temp_islandia)
 #------------------------------------------------------------------------------
 #Grafica suicidios en Arizona por sexo
 arizona_suic_sexo <- arizona_suicidios %>%
@@ -146,41 +146,32 @@ graf_region_arizona <- ggplot(arizona_region_top, aes(x = reorder(Region, Muerte
 print(graf_region_arizona)
 
 #------------------------------------------------------------------------------
-#Grafica de termperatura en Arizona
-df_temp_arizona <- Arizona_temp_csv %>%
-  filter(Date >= 201801 & Date <= 202312) %>%  # Filtrar primero
+# Gráfica de temperatura en Arizona
+df_temp_arizona <- Arizona_temp_filtrado %>%
   mutate(
-    # Convertir de Fahrenheit a Celsius
-    temperatura_media = (Value - 32) * 5/9,
-    # Extraer año y mes
-    año = Date %/% 100,
-    mes_num = Date %% 100,
-    # Crear fecha
-    fecha = as.Date(paste(año, mes_num, "01", sep = "-")),
+    # Crear fecha para extraer mes y estación
+    fecha = as.Date(paste(Year, Month, "01", sep = "-")),
     mes = month(fecha, label = TRUE, abbr = FALSE),
-    # Clasificar por estación
     estacion = case_when(
-      mes_num %in% c(12, 1, 2) ~ "Invierno",
-      mes_num %in% c(3, 4, 5) ~ "Primavera",
-      mes_num %in% c(6, 7, 8) ~ "Verano",
-      mes_num %in% c(9, 10, 11) ~ "Otoño"
+      Month %in% c(12, 1, 2) ~ "Invierno",
+      Month %in% c(3, 4, 5) ~ "Primavera",
+      Month %in% c(6, 7, 8) ~ "Verano",
+      Month %in% c(9, 10, 11) ~ "Otoño"
     )
-  ) %>%
-  filter(!is.na(temperatura_media))
+  )
 
 # Resumen por año y estación
 df_resumen_arizona <- df_temp_arizona %>%
-  group_by(año, estacion) %>%
+  group_by(Year, estacion) %>%
   summarise(
-    temp_media = mean(temperatura_media, na.rm = TRUE),
-    temp_max = max(temperatura_media, na.rm = TRUE),
-    temp_min = min(temperatura_media, na.rm = TRUE),
-    .groups = "drop"
+    temp_media = mean(Value, na.rm = TRUE),
+    temp_max = max(Value, na.rm = TRUE),
+    temp_min = min(Value, na.rm = TRUE)
   ) %>%
   mutate(estacion = factor(estacion, levels = c("Invierno", "Primavera", "Verano", "Otoño")))
 
 # Gráfico de temperatura
-graf_temp_arizona <- ggplot(df_resumen_arizona, aes(x = as.factor(año), y = temp_media, fill = estacion)) +
+graf_temp_arizona <- ggplot(df_resumen_arizona, aes(x = as.factor(Year), y = temp_media, fill = estacion)) +
   geom_col(position = "dodge", width = 0.7) +
   scale_fill_manual(
     values = c("Invierno" = "#3498db", "Primavera" = "#2ecc71", 
@@ -190,7 +181,7 @@ graf_temp_arizona <- ggplot(df_resumen_arizona, aes(x = as.factor(año), y = tem
     title = "Temperatura Media por Año y Estación",
     subtitle = "Arizona 2018-2023",
     x = "Año",
-    y = "Temperatura Media (°C)",  # Cambiado a Celsius
+    y = "Temperatura Media (°C)",
     fill = "Estación"
   ) +
   theme_minimal(base_size = 12) +
