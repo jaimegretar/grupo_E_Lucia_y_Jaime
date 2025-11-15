@@ -104,7 +104,7 @@ df <- as.data.frame(Islandia_suicidio_json)
 View(df)
 str(df)
 
-<<<<<<< HEAD
+
 df_filtered <- df %>%
   mutate(Year = as.numeric(Year)) %>%
   filter(Year >= 2018 & Year <= 2023)
@@ -120,5 +120,4 @@ unique(df_filtered$Year)
 df_filtered %>%
   count(Year)
 view(df_filtered)
-=======
->>>>>>> c8c57a3c1d9f5f40acb7a111cdc8eca59e0a6027
+
