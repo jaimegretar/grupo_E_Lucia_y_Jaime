@@ -8,12 +8,12 @@ library(plotly)
 library(lubridate)
 
 #Grafica suicidios en Islandia
-df_clean <- df
+df_clean <- suicidios_Islandia
 
 df_sexo <- df_clean %>%
   filter(Age == "Total", Sex != "Total")
 
-df_sexo <- df %>%
+df_sexo <- suicidios_Islandia %>%
   filter(Age == "Total", Sex != "Total")
 
 
@@ -220,3 +220,4 @@ graf_temp_evol <- ggplot(df_temp_mensual, aes(x = fecha, y = temp_media)) +
         panel.grid.minor = element_blank())
 
 print(graf_temp_evol)
+
