@@ -641,7 +641,7 @@ print(graf_comp_edad_simpl) #grafico de suicidios por grupo de edad en los dos s
 ### Analisis de correlacion entre temperatura y suicidios en Arizona e Islandia:
 Por último, se explora de forma descriptiva si existe una posible relación lineal entre la temperatura media anual y el número total de suicidios en el periodo 2018–2023. Para ello se calcula, en cada país, la temperatura media anual y el total de suicidios por año, y se representa un diagrama de dispersión con recta de regresión, junto con el coeficiente de correlación de Pearson.
 #### Arizona:
-'''{r}
+```{r}
 # Suicidios totales por año en Arizona
 
 arizona_suic_anual <- arizona_suicidios %>%
@@ -698,11 +698,12 @@ arizona_temp_suic$suicidios_totales,
 use = "complete.obs"
 )
 cor_arizona
-'''
+```
+
 En Arizona, el coeficiente de correlación de Pearson entre temperatura media anual y número de suicidios es muy cercano a cero, lo que indica que, con los
 datos disponibles, **no se observa una relación lineal clara** entre ambas variables.
 ####Islandia:
-'''{r}
+```{r}
 # Suicidios totales por año en Islandia (usando suicidios_Islandia)
 
 islandia_suic_anual <- suicidios_Islandia %>%
