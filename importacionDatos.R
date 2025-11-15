@@ -34,9 +34,9 @@ Islandia_temp_json %>%
 Arizona_suicidioRegion_csv <- read_csv(
   file = "INPUT/DATA/Arizona/Salud/HDPulse_data_export.csv",
   col_names = c(
-    "Region/Condado",
+    "Region",
     "Codigo_FIPS",
-    "Muertes_100,000",
+    "Muertes_100_000",
     "CI_Inferior",
     "CI_Superior",
     "Num_Muertes_Anual",

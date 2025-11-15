@@ -131,13 +131,13 @@ print(graf_suic_edad_ariz)
 #------------------------------------------------------------------------------
 #Grafica de suicidios por region en Arizona
 arizona_region_top <- Arizona_suicidioRegion_csv %>%
-  filter(!is.na(Death_Rate)) %>%
-  arrange(desc(Death_Rate)) %>%
+  filter(!is.na(Muertes_100_000)) %>%
+  arrange(desc(Muertes_100_000)) %>%
   head(15)  # Top 15 regiones
 
-graf_region_arizona <- ggplot(arizona_region_top, aes(x = reorder(Region, Death_Rate), y = Death_Rate)) +
+graf_region_arizona <- ggplot(arizona_region_top, aes(x = reorder(Region, Muertes_100_000), y = Muertes_100_000)) +
   geom_col(fill = "#e74c3c") +
-  geom_errorbar(aes(ymin = CI_Lower, ymax = CI_Upper), width = 0.2, alpha = 0.6) +
+  geom_errorbar(aes(ymin = CI_Inferior, ymax = CI_Superior), width = 0.2, alpha = 0.6) +
   coord_flip() +
   labs(title = "Tasa de Suicidios por Región en Arizona",
        subtitle = "Top 15 Regiones con Mayor Tasa",
