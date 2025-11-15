@@ -336,3 +336,62 @@ suicidios_Islandia %>%
   count(Year)
 view(suicidios_Islandia)
 ```
+
+# GRÁFICAS
+A continuación se muestran las gráficas obtenidas a partir de los datos importados y filtrados. 
+## 2.1. Gráficas individuales
+Primeramente se obtuveron gráficas individuales para cada lugar con respecto a la variacion de temperatura y suicidios.
+### 2.1.1. Gráficas de suicidios
+Se generaron gráficas que muestran la tasa de suicidios por año enfrentando hombres (azul) y mujeres (rojo).
+#### Arizona:
+```{r}
+arizona_suic_sexo <- arizona_suicidios %>%
+  filter(!is.na(Deaths), !is.na(Year)) %>%
+  group_by(Year, Sex) %>%
+  summarise(Total_Deaths = sum(Deaths, na.rm = TRUE))
+
+# Crear gráfico
+graf_suicHF_ariz <- ggplot(arizona_suic_sexo, aes(x = Year, y = Total_Deaths, color = Sex, group = Sex)) +
+  geom_line(size = 1.2) +
+  geom_point(size = 2) +
+  scale_color_manual(values = c("Males" = "#3498db", "Females" = "#e74c3c"),
+                     labels = c("Females" = "Mujeres", "Males" = "Hombres")) +
+  labs(title = "Suicidios por Sexo en Arizona",
+       subtitle = "2018-2023",
+       x = "Año",
+       y = "Número de suicidios",
+       color = "Sexo") +
+  theme_minimal(base_size = 12) +
+  theme(plot.title = element_text(face = "bold", size = 16),
+        panel.grid.minor = element_blank(),
+        legend.position = "top")
+
+print(graf_suicHF_ariz)
+```
+#### Islandia:
+```{r}
+df_clean <- suicidios_Islandia
+
+df_sexo <- suicidios_Islandia %>%
+  filter(Age == "Total", Sex != "Total")
+
+graf_suicHF_isl <- ggplot(df_sexo, aes(x = Year, y = value, color = Sex, group = Sex)) +
+  geom_line(size = 1.2) +
+  geom_point(size = 2) +
+  scale_color_manual(values = c("Males" = "#3498db", "Females" = "#e74c3c"),
+                     labels = c("Females" = "Mujeres", "Males" = "Hombres")) +
+  labs(title = "Suicidios por Sexo en Islandia",
+       x = "Año",
+       y = "Número de suicidios",
+       color = "Sexo") +
+  theme_minimal(base_size = 12) +
+  theme(plot.title = element_text(face = "bold", size = 16),
+        panel.grid.minor = element_blank(),
+        legend.position = "top")
+
+print(graf_suicHF_isl)
+```
+### 2.1.2. Gráficas de temperatura
+#### Arizona:
+#### Islandia:
+## 2.2. Gráficas combinadas/comparativas

@@ -10,12 +10,8 @@ library(lubridate)
 #Grafica suicidios en Islandia
 df_clean <- suicidios_Islandia
 
-df_sexo <- df_clean %>%
-  filter(Age == "Total", Sex != "Total")
-
 df_sexo <- suicidios_Islandia %>%
   filter(Age == "Total", Sex != "Total")
-
 
 graf_suicHF_isl <- ggplot(df_sexo, aes(x = Year, y = value, color = Sex, group = Sex)) +
   geom_line(size = 1.2) +
@@ -87,7 +83,7 @@ print(p2)
 arizona_suic_sexo <- arizona_suicidios %>%
   filter(!is.na(Deaths), !is.na(Year)) %>%
   group_by(Year, Sex) %>%
-  summarise(Total_Deaths = sum(Deaths, na.rm = TRUE), .groups = "drop")
+  summarise(Total_Deaths = sum(Deaths, na.rm = TRUE))
 
 # Crear gráfico
 graf_suicHF_ariz <- ggplot(arizona_suic_sexo, aes(x = Year, y = Total_Deaths, color = Sex, group = Sex)) +
