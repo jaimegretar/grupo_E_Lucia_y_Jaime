@@ -22,7 +22,7 @@ Analizar la posible relación entre las condiciones climáticas y la salud menta
 - Analizar efectos estacionales en las tasas de suicidios.
 
 # METODOLOGÍA
-## Carga de paquetes:
+## 1.1. Carga de paquetes:
 A continuación se encuentran los paquetes empleados para cargar y trabajar con los datos del seminario.
 ```{r setup, message=FALSE, warning=FALSE}
 
@@ -36,10 +36,165 @@ library(tidyjson)
 library(plotly)
 library(dplyr)
 ```
-## Obtención de datos de temperatura y suicidio (Islandia y Arizona)
-### Importacion de datos de temperatura:
+## 1.2. Obtención de datos de temperatura y suicidio (Islandia y Arizona)
+Para la obtencion de datos hemos realizado diversas busquedas en bases de datos y consultas a una API.
+El siguiente código Python define las funciones necesarias para consultar la API de Veðurstofa Íslands (api.vedur.is), buscar la estación por nombre ("Reykjav"), solicitar la temperatura media diaria (t) y guardar el resultado en archivos CSV y JSON. La consulta se ha realizado con ayuda de la IA.
+```{python}
+import requests
+import pandas as pd
+from datetime import datetime, date
+
+BASE = "https://api.vedur.is/weather"
+CITY_HINT = "Reykjav"              # Cambia por "Akureyri" si quieres esa zona
+START = "2018-01-01"               # Puedes ampliar a 2015-01-01 cuando veas cobertura
+END   = "2023-12-31"
+OUT_PREFIX = "temperatura_reykjavik_2018_2023"
+HEADERS = {"Accept": "application/json"}
+
+def normalize_rows(payload):
+    if isinstance(payload, list):
+        return payload
+    if isinstance(payload, dict) and isinstance(payload.get("data"), list):
+        return payload["data"]
+    if isinstance(payload, dict):
+        for v in payload.values():
+            if isinstance(v, list):
+                return v
+    return []
+
+def find_station_id_by_name_hint(name_hint: str) -> int:
+    """Busca estación por nombre en /observations/synop/latest"""
+    url = f"{BASE}/observations/synop/latest"
+    r = requests.get(url, params={"format":"json"}, headers=HEADERS, timeout=60)
+    r.raise_for_status()
+    rows = normalize_rows(r.json())
+    # buscar coincidencia por nombre
+    matches = [row for row in rows
+               if isinstance(row, dict)
+               and isinstance(row.get("name"), str)
+               and name_hint.lower() in row["name"].lower()]
+    if not matches:
+        # Si no hay, intenta devolver la primera de la capital region (region_id=1)
+        url2 = f"{BASE}/observations/synop/latest"
+        r2 = requests.get(url2, params={"format":"json", "region_id":"1"}, headers=HEADERS, timeout=60)
+        r2.raise_for_status()
+        rows2 = normalize_rows(r2.json())
+        if not rows2:
+            raise RuntimeError("No pude listar estaciones (latest).")
+        print("⚠ No encontré por nombre; uso primera de la región 1.")
+        return int(rows2[0]["station"])
+    station_id = int(matches[0]["station"])
+    print(f"✔ Estación encontrada: '{matches[0]['name']}' (id={station_id})")
+    return station_id
+
+def year_chunks(start: str, end: str):
+    sd = datetime.fromisoformat(start).date()
+    ed = datetime.fromisoformat(end).date()
+    for year in range(sd.year, ed.year + 1):
+        a = date(year, 1, 1)
+        b = date(year, 12, 31)
+        if a < sd: a = sd
+        if b > ed: b = ed
+        yield a, b
+
+def fetch_synop_agg(aggregation: str, station_id: int, day_from: date, day_to: date) -> pd.DataFrame:
+    """
+    Llama a /observations/synop/{aggregation} usando station_id como array en query:
+    station_id=1&station_id=1  (requests admite lista de tuplas para repetir keys)
+    """
+    assert aggregation in {"day","month","year","clock"}
+    endpoint = f"{BASE}/observations/synop/{aggregation}"
+    # lista de tuplas para que 'station_id' salga repetido (array)
+    params = [
+        ("station_id", station_id),            # array<integer>
+        ("day_from", day_from.isoformat()),
+        ("day_to",   day_to.isoformat()),
+        ("parameters", "basic"),
+        ("format", "json"),
+        ("order",  "asc"),
+    ]
+    r = requests.get(endpoint, params=params, headers=HEADERS, timeout=120)
+    if r.status_code == 200:
+        rows = normalize_rows(r.json())
+        return pd.DataFrame(rows)
+    # imprime ayuda de depuración
+    raise RuntimeError(f"{endpoint} devolvió {r.status_code}: {r.text[:200]}")
+
+def get_daily_t(station_id: int, start: str, end: str) -> pd.DataFrame:
+    frames = []
+    for a, b in year_chunks(start, end):
+        try:
+            df = fetch_synop_agg("day", station_id, a, b)
+            if df.empty:
+                print(f"⚠ Día {a}–{b}: sin filas")
+                continue
+            # Esperado: columns year, month, day, t (según el esquema)
+            required = {"year","month","day","t"}
+            if not required.issubset(df.columns):
+                raise RuntimeError(f"Estructura inesperada (day). Columnas: {df.columns.tolist()}")
+            df["fecha"] = pd.to_datetime(df[["year","month","day"]])
+            frames.append(df[["fecha","t"]].rename(columns={"t":"temperatura_media"}).dropna())
+            print(f"✔ Día {a}–{b}: {len(df)} filas")
+        except Exception as e:
+            print(f"❌ Día {a}–{b} error: {e}")
+    if not frames:
+        return pd.DataFrame(columns=["fecha","temperatura_media"])
+    out = (pd.concat(frames, ignore_index=True)
+             .sort_values("fecha").reset_index(drop=True))
+    return out
+
+def get_monthly_t(station_id: int, start: str, end: str) -> pd.DataFrame:
+    frames = []
+    for a, b in year_chunks(start, end):
+        try:
+            df = fetch_synop_agg("month", station_id, a, b)
+            if df.empty:
+                print(f"⚠ Mes {a}–{b}: sin filas")
+                continue
+            required = {"year","month","t"}
+            if not required.issubset(df.columns):
+                raise RuntimeError(f"Estructura inesperada (month). Columnas: {df.columns.tolist()}")
+            # para mensual no hay 'day'; ponemos día 1
+            df["fecha"] = pd.to_datetime(df[["year","month"]].assign(day=1))
+            frames.append(df[["fecha","t"]].rename(columns={"t":"temperatura_media"}).dropna())
+            print(f"✔ Mes {a}–{b}: {len(df)} filas")
+        except Exception as e:
+            print(f"❌ Mes {a}–{b} error: {e}")
+    if not frames:
+        return pd.DataFrame(columns=["fecha","temperatura_media"])
+    out = (pd.concat(frames, ignore_index=True)
+             .sort_values("fecha").reset_index(drop=True))
+    return out
+
+def save(df: pd.DataFrame, prefix: str):
+    df.to_csv(f"{prefix}.csv", index=False, encoding="utf-8")
+    df.to_json(f"{prefix}.json", orient="records", indent=2, date_format="iso")
+    print("\n✅ Guardado en:")
+    print(f" - {prefix}.csv")
+    print(f" - {prefix}.json")
+
+if __name__ == "__main__":
+    station_id = find_station_id_by_name_hint(CITY_HINT)
+
+    # 1) Intento diario
+    daily = get_daily_t(station_id, START, END)
+
+    if not daily.empty:
+        print(daily.head())
+        save(daily, OUT_PREFIX)                      # salida diaria
+    else:
+        print("↩️ No hubo datos diarios; paso a semanal (re-muestreo) o mensual.")
+        # 2a) Intento semanal a partir de 'clock' o 'day' => si no hay 'day', usa 'month'
+        monthly = get_monthly_t(station_id, START, END)
+        if monthly.empty:
+            raise SystemExit("❌ No hubo datos diarios ni mensuales en el rango. Prueba otra estación o rango.")
+        save(monthly, OUT_PREFIX + "_mensual")
+        print("ℹ He guardado la serie mensual. Si quieres, te genero semanal a partir de la mensual.")
+```
+
+### 1.2.1 Importacion de datos de temperatura:
 #### Arizona:
-Obtenemos los datos de temperatura de Arizona, desde un archivo .csv y desde un archivo .json
+Obtenemos los datos de temperatura de Arizona, desde un archivo .csv y desde un archivo .json:
 ```{r}
 # Importacion datos temperatura Arizona .json
 Arizona_temp_json <- fromJSON(file = "INPUT/DATA/Arizona/Temperatura/data.json")
@@ -51,6 +206,8 @@ Arizona_temp_json %>%
 Arizona_temp_csv <- read_delim(file="INPUT/DATA/Arizona/Temperatura/data.csv", delim = ",")
 View(Arizona_temp_csv)
 ```
+Aunque disponemos de los datos de temperatura en ambos formatos, optaremos por utilizar el archivo .csv, ya que es más sencillo de manejar y el formato .json nos ha generado problemas.
+
 #### Islandia:
 Importacion de los datos de temperatura de Islandia (Reikiavik) en .json, en el periodo del 2018-2023:
 ```{r}
@@ -60,30 +217,52 @@ Islandia_temp_json %>%
   spread_all() %>%
   View()
 ```
-### Importacion de datos de suicidios:
+### 1.2.2. Importacion de datos de suicidios:
 #### Arizona:
-Importamos los datos de suicidios de Arizona (relacionados con salud mental) desde un archivo CSV. Se especifican los nombres de las columnas y se salta la fila de encabezado defectuosa.
+Importamos los datos de suicidios de Arizona (relacionados con salud mental) desde un archivo CSV. Se especifican los nombres de las columnas y se salta la fila de encabezado que nos genera problemas en la importación.
 ```{r}
 Arizona_suicidioRegion_csv <- read_csv(
-  file = "INPUT/DATA/Arizona/Salud/HDPulse_data_export.csv",
-  col_names = c(
-    "Region",
-    "FIPS",
-    "Death_Rate",
-    "CI_Lower",
-    "CI_Upper",
-    "Num_Deaths",
-    "Trend",
-    "Annual_Change",
-    "CI_Lower_Change",
-    "CI_Upper_Change"
-  ),
-  skip = 1,
-  trim_ws = TRUE,
-  show_col_types = FALSE
+  file = "INPUT/DATA/Arizona/Salud/HDPulse_data_export.csv",
+  col_names = c(
+    "Region",
+    "Codigo_FIPS",
+    "Muertes_100_000",
+    "CI_Inferior",
+    "CI_Superior",
+    "Num_Muertes_Anual",
+    "Tendencia",
+    "Tendencia_Anual",
+    "CI_Inferior_rep",
+    "CI_Superior_rep"
+  ),
+  skip = 1,              # Para saltar la fila de encabezado que da errores
+  trim_ws = TRUE,
+  show_col_types = FALSE
 )
 
 View(Arizona_suicidioRegion_csv)
+```
+Otro archivo .csv para complementar los datos de suicidios de Arizona desde el 2018-2023 (se utilizo la ayuda de la IA para poder importar el archivo correctamente ya que contenia los datos encapsulados con dobles comillas y más caracteres que dificultaban su procesamiento):
+```{r}
+# Importacion suicidios Arizona 2 del 2018 al 2023
+datos2 <- read.csv("INPUT/DATA/Arizona/Salud/reports-data-export.csv",
+                   header = TRUE,
+                   stringsAsFactors = FALSE)
+
+# Usar una expresión regular sofisticada para separar respetando las comillas
+datos_separados <- datos2 %>%
+  mutate(linea = .[[1]]) %>%
+  separate(linea,
+           into = c("Intent", "Year", "Age_Group", "Sex", "Deaths",
+                    "Population", "Crude_Rate", "Age_Adjusted_Rate",
+                    "Years_Potential_Life_Lost"),
+           sep = ',(?=(?:[^"]*"[^"]*")*[^"]*$)', # Separar por comas fuera de comillas
+           extra = "merge") %>%
+  mutate(across(everything(), ~str_replace_all(., '"', ''))) %>% # Quitar comillas
+  select(-1) # Eliminar la primera columna original
+
+# Ver resultado
+View(datos_separados)
 ```
 #### Islandia:
 Importamos los datos de suicidios de Islandia desde un archivo JSON con formato JSON-stat.
@@ -94,3 +273,225 @@ df <- as.data.frame(Islandia_suicidio_json)
 View(df)
 ```
 
+## 1.3. Limpieza y preparación de datos 
+Los archivos importados contienen mucha información que no es importante para nuestro seminario. Por lo que, vamos a filtrar todos los archivos para quedarnos unicamente con datos relacionados con suicidios y temperaturas, concretamente entre los años 2018 y 2023.
+### 1.3.1. Limpieza y preparación de datos de temperatura
+#### Arizona:
+Filtramos del Arizona_temp_csv los datos de temperatura media entre los años 2018 y 2023, y creamos nuevas columnas para el año, mes y convertimos la temperatura de Fº a Cº.
+```{r}
+Arizona_temp_filtrado <- Arizona_temp_csv %>%
+  filter(Date >= 201801 & Date <= 202312) %>%
+  mutate(
+    Year = Date %/% 100,
+    Month = Date %% 100,
+    Value = round((Value - 32) * 5/9, 1)
+  ) %>%
+  select(Year, Month, Value)
+
+View(Arizona_temp_filtrado)
+```
+#### Islandia:
+En el caso de Islandia , los datos ya están filtrados en el archivo JSON, por lo que no es necesario realizar un filtrado adicional.
+
+### 1.3.2. Limpieza y preparación de datos de suicidios
+#### Arizona:
+Filtramos los datos de suicidios de Arizona pero solo del segundo csv ya que el primero es por regiones y no especifica los años.
+Primeramente hay que convertir los datos a tipo numer ico para poder trabajar con ellos.
+```{r}
+# Limpieza de datos - convertir a numérico
+arizona_csv <- datos_separados %>%
+  mutate(
+    Year = as.numeric(Year),
+    Deaths = as.numeric(gsub("[^0-9]", "", Deaths)),
+    Population = as.numeric(gsub(",", "", Population)),  # Solo quitar comas
+    Crude_Rate = as.numeric(gsub("[*]", "", Crude_Rate)),
+    Age_Adjusted_Rate = as.numeric(gsub("[*]", "", Age_Adjusted_Rate)),
+    Years_Potential_Life_Lost = as.numeric(gsub(",", "", Years_Potential_Life_Lost))
+  )
+
+# Ver resumen
+View(arizona_csv)
+```
+Posteriormente, filtramos solo los suicidios entre los años 2018 y 2023.
+```{r}
+# Filtrar solo suicidios
+arizona_suicidios <- arizona_csv %>%
+  filter(Intent == "Suicide")
+
+# Ver el resultado
+View(arizona_suicidios)
+```
+#### Islandia:
+Filtramos los suicidios en Islandia entre los años 2018 y 2023.
+```{r}
+suicidios_Islandia <- df %>%
+  mutate(Year = as.numeric(Year)) %>%
+  filter(Year >= 2018 & Year <= 2023)
+
+# Ver años únicos
+unique(suicidios_Islandia$Year)
+
+# Contar observaciones por año
+suicidios_Islandia %>%
+  count(Year)
+view(suicidios_Islandia)
+```
+
+# GRÁFICAS
+A continuación se muestran las gráficas obtenidas a partir de los datos importados y filtrados. 
+## 2.1. Gráficas individuales
+Primeramente se obtuveron gráficas individuales para cada lugar con respecto a la variación de temperatura y suicidios.
+### 2.1.1. Gráficas de suicidios
+Se generaron gráficas que muestran la tasa de suicidios por año enfrentando hombres (azul) y mujeres (rojo).
+#### Arizona:
+```{r}
+arizona_suic_sexo <- arizona_suicidios %>%
+  filter(!is.na(Deaths), !is.na(Year)) %>%
+  group_by(Year, Sex) %>%
+  summarise(Total_Deaths = sum(Deaths, na.rm = TRUE))
+
+# Crear gráfico
+graf_suicHF_ariz <- ggplot(arizona_suic_sexo, aes(x = Year, y = Total_Deaths, color = Sex, group = Sex)) +
+  geom_line(size = 1.2) +
+  geom_point(size = 2) +
+  scale_color_manual(values = c("Males" = "#3498db", "Females" = "#e74c3c"),
+                     labels = c("Females" = "Mujeres", "Males" = "Hombres")) +
+  labs(title = "Suicidios por Sexo en Arizona",
+       subtitle = "2018-2023",
+       x = "Año",
+       y = "Número de suicidios",
+       color = "Sexo") +
+  theme_minimal(base_size = 12) +
+  theme(plot.title = element_text(face = "bold", size = 16),
+        panel.grid.minor = element_blank(),
+        legend.position = "top")
+
+print(graf_suicHF_ariz)
+```
+#### Islandia:
+```{r}
+df_clean <- suicidios_Islandia
+
+df_sexo <- suicidios_Islandia %>%
+  filter(Age == "Total", Sex != "Total")
+
+graf_suicHF_isl <- ggplot(df_sexo, aes(x = Year, y = value, color = Sex, group = Sex)) +
+  geom_line(size = 1.2) +
+  geom_point(size = 2) +
+  scale_color_manual(values = c("Males" = "#3498db", "Females" = "#e74c3c"),
+                     labels = c("Females" = "Mujeres", "Males" = "Hombres")) +
+  labs(title = "Suicidios por Sexo en Islandia",
+       x = "Año",
+       y = "Número de suicidios",
+       color = "Sexo") +
+  theme_minimal(base_size = 12) +
+  theme(plot.title = element_text(face = "bold", size = 16),
+        panel.grid.minor = element_blank(),
+        legend.position = "top")
+
+print(graf_suicHF_isl)
+```
+### 2.1.2. Gráficas de temperatura
+Se generaron gráficas que muestran la media de las temperaturas (medida en grados Celsius) por sepearandolas por estaciones.
+#### Arizona:
+```{r}
+# Gráfica de temperatura en Arizona
+df_temp_arizona <- Arizona_temp_filtrado %>%
+  mutate(
+    # Crear fecha para extraer mes y estación
+    fecha = as.Date(paste(Year, Month, "01", sep = "-")),
+    mes = month(fecha, label = TRUE, abbr = FALSE),
+    estacion = case_when(
+      Month %in% c(12, 1, 2) ~ "Invierno",
+      Month %in% c(3, 4, 5) ~ "Primavera",
+      Month %in% c(6, 7, 8) ~ "Verano",
+      Month %in% c(9, 10, 11) ~ "Otoño"
+    )
+  )
+
+# Resumen por año y estación
+df_resumen_arizona <- df_temp_arizona %>%
+  group_by(Year, estacion) %>%
+  summarise(
+    temp_media = mean(Value, na.rm = TRUE),
+    temp_max = max(Value, na.rm = TRUE),
+    temp_min = min(Value, na.rm = TRUE)
+  ) %>%
+  mutate(estacion = factor(estacion, levels = c("Invierno", "Primavera", "Verano", "Otoño")))
+
+# Gráfico de temperatura
+graf_temp_arizona <- ggplot(df_resumen_arizona, aes(x = as.factor(Year), y = temp_media, fill = estacion)) +
+  geom_col(position = "dodge", width = 0.7) +
+  scale_fill_manual(
+    values = c("Invierno" = "#3498db", "Primavera" = "#2ecc71", 
+               "Verano" = "#f39c12", "Otoño" = "#e67e22")
+  ) +
+  labs(
+    title = "Temperatura Media por Año y Estación",
+    subtitle = "Arizona 2018-2023",
+    x = "Año",
+    y = "Temperatura Media (°C)",
+    fill = "Estación"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    plot.title = element_text(face = "bold", size = 16),
+    legend.position = "top",
+    panel.grid.minor = element_blank()
+  )
+
+print(graf_temp_arizona)
+```
+#### Islandia:
+```{r}
+#Grafica de temperatura de Isalandia:
+df_temp <- Islandia_temp_json %>%
+  spread_all() %>%
+  select(fecha, temperatura_media) %>%
+  mutate(
+    fecha = as.Date(fecha),
+    temperatura_media = as.numeric(temperatura_media),
+    año = year(fecha),
+    mes = month(fecha, label = TRUE, abbr = FALSE),
+    mes_num = month(fecha),
+    estacion = case_when(
+      mes_num %in% c(12, 1, 2) ~ "Invierno",
+      mes_num %in% c(3, 4, 5) ~ "Primavera",
+      mes_num %in% c(6, 7, 8) ~ "Verano",
+      mes_num %in% c(9, 10, 11) ~ "Otoño"
+    )
+  )
+
+df_resumen <- df_temp %>%
+  group_by(año, estacion) %>%
+  summarise(
+    temp_media = mean(temperatura_media, na.rm = TRUE),
+    temp_max = max(temperatura_media, na.rm = TRUE),
+    temp_min = min(temperatura_media, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  mutate(estacion = factor(estacion, levels = c("Invierno", "Primavera", "Verano", "Otoño")))
+
+graf_temp_islandia <- ggplot(df_resumen, aes(x = as.factor(año), y = temp_media, fill = estacion)) +
+  geom_col(position = "dodge", width = 0.7) +
+  scale_fill_manual(
+    values = c("Invierno" = "#3498db", "Primavera" = "#2ecc71", 
+               "Verano" = "#f39c12", "Otoño" = "#e67e22")
+  ) +
+  labs(
+    title = "Temperatura Media por Año y Estación",
+    subtitle = "Reykjavik 2018-2023",
+    x = "Año",
+    y = "Temperatura Media (°C)",
+    fill = "Estación"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    plot.title = element_text(face = "bold", size = 16),
+    legend.position = "top",
+    panel.grid.minor = element_blank()
+  )
+
+print(graf_temp_islandia)
+```
+## 2.2. Gráficas combinadas/comparativas

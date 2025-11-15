@@ -19,6 +19,17 @@ Arizona_temp_json %>%
 Arizona_temp_csv <- read_delim(file="INPUT/DATA/Arizona/Temperatura/data.csv", delim = ",")
 View(Arizona_temp_csv)
 
+Arizona_temp_filtrado <- Arizona_temp_csv %>%
+  filter(Date >= 201801 & Date <= 202312) %>%
+  mutate(
+    Year = Date %/% 100,
+    Month = Date %% 100,
+    Value = round((Value - 32) * 5/9, 1)
+  ) %>%
+  select(Year, Month, Value)
+
+View(Arizona_temp_filtrado)
+
 # Importacion datos temperatura Arizona .json
 Islandia_temp_json <- fromJSON(file = "INPUT/DATA/Islandia/Temperatura/temperatura_reykjavik_2018_2023.json")
 Islandia_temp_json %>%
@@ -30,15 +41,15 @@ Arizona_suicidioRegion_csv <- read_csv(
   file = "INPUT/DATA/Arizona/Salud/HDPulse_data_export.csv",
   col_names = c(
     "Region",
-    "FIPS",
-    "Death_Rate",
-    "CI_Lower",
-    "CI_Upper",
-    "Num_Deaths",
-    "Trend",
-    "Annual_Change",
-    "CI_Lower_Change",
-    "CI_Upper_Change"
+    "Codigo_FIPS",
+    "Muertes_100_000",
+    "CI_Inferior",
+    "CI_Superior",
+    "Num_Muertes_Anual",
+    "Tendencia",
+    "Tendencia_Anual",
+    "CI_Inferior_rep",
+    "CI_Superior_rep"
   ),
   skip = 1,              # Saltar la fila de encabezado defectuosa
   trim_ws = TRUE,
@@ -68,6 +79,7 @@ datos_separados <- datos2 %>%
 # Ver resultado
 head(datos_separados)
 str(datos_separados)
+View(datos_separados)
 
 # Limpieza de datos - convertir a numérico
 arizona_csv <- datos_separados %>%
@@ -104,20 +116,31 @@ df <- as.data.frame(Islandia_suicidio_json)
 View(df)
 str(df)
 
+<<<<<<< HEAD
 
 df_filtered <- df %>%
+=======
+<<<<<<< HEAD
+suicidios_Islandia <- df %>%
+>>>>>>> 92dd293dcf08209ae455c66c89666d4ff6cbf2ea
   mutate(Year = as.numeric(Year)) %>%
   filter(Year >= 2018 & Year <= 2023)
 
 # Verificar el resultado
-str(df_filtered)
-summary(df_filtered$Year)
+str(suicidios_Islandia)
+summary(suicidios_Islandia$Year)
 
 # Ver años únicos
-unique(df_filtered$Year)
+unique(suicidios_Islandia$Year)
 
 # Contar observaciones por año
-df_filtered %>%
+suicidios_Islandia %>%
   count(Year)
+<<<<<<< HEAD
 view(df_filtered)
 
+=======
+view(suicidios_Islandia)
+=======
+>>>>>>> c8c57a3c1d9f5f40acb7a111cdc8eca59e0a6027
+>>>>>>> 92dd293dcf08209ae455c66c89666d4ff6cbf2ea

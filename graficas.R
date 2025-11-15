@@ -8,14 +8,10 @@ library(plotly)
 library(lubridate)
 
 #Grafica suicidios en Islandia
-df_clean <- df
+df_clean <- suicidios_Islandia
 
-df_sexo <- df_clean %>%
+df_sexo <- suicidios_Islandia %>%
   filter(Age == "Total", Sex != "Total")
-
-df_sexo <- df %>%
-  filter(Age == "Total", Sex != "Total")
-
 
 graf_suicHF_isl <- ggplot(df_sexo, aes(x = Year, y = value, color = Sex, group = Sex)) +
   geom_line(size = 1.2) +
@@ -61,7 +57,7 @@ df_resumen <- df_temp %>%
   ) %>%
   mutate(estacion = factor(estacion, levels = c("Invierno", "Primavera", "Verano", "Otoño")))
 
-p2 <- ggplot(df_resumen, aes(x = as.factor(año), y = temp_media, fill = estacion)) +
+graf_temp_islandia <- ggplot(df_resumen, aes(x = as.factor(año), y = temp_media, fill = estacion)) +
   geom_col(position = "dodge", width = 0.7) +
   scale_fill_manual(
     values = c("Invierno" = "#3498db", "Primavera" = "#2ecc71", 
@@ -81,13 +77,13 @@ p2 <- ggplot(df_resumen, aes(x = as.factor(año), y = temp_media, fill = estacio
     panel.grid.minor = element_blank()
   )
 
-print(p2)
+print(graf_temp_islandia)
 #------------------------------------------------------------------------------
 #Grafica suicidios en Arizona por sexo
 arizona_suic_sexo <- arizona_suicidios %>%
   filter(!is.na(Deaths), !is.na(Year)) %>%
   group_by(Year, Sex) %>%
-  summarise(Total_Deaths = sum(Deaths, na.rm = TRUE), .groups = "drop")
+  summarise(Total_Deaths = sum(Deaths, na.rm = TRUE))
 
 # Crear gráfico
 graf_suicHF_ariz <- ggplot(arizona_suic_sexo, aes(x = Year, y = Total_Deaths, color = Sex, group = Sex)) +
@@ -131,13 +127,13 @@ print(graf_suic_edad_ariz)
 #------------------------------------------------------------------------------
 #Grafica de suicidios por region en Arizona
 arizona_region_top <- Arizona_suicidioRegion_csv %>%
-  filter(!is.na(Death_Rate)) %>%
-  arrange(desc(Death_Rate)) %>%
+  filter(!is.na(Muertes_100_000)) %>%
+  arrange(desc(Muertes_100_000)) %>%
   head(15)  # Top 15 regiones
 
-graf_region_arizona <- ggplot(arizona_region_top, aes(x = reorder(Region, Death_Rate), y = Death_Rate)) +
+graf_region_arizona <- ggplot(arizona_region_top, aes(x = reorder(Region, Muertes_100_000), y = Muertes_100_000)) +
   geom_col(fill = "#e74c3c") +
-  geom_errorbar(aes(ymin = CI_Lower, ymax = CI_Upper), width = 0.2, alpha = 0.6) +
+  geom_errorbar(aes(ymin = CI_Inferior, ymax = CI_Superior), width = 0.2, alpha = 0.6) +
   coord_flip() +
   labs(title = "Tasa de Suicidios por Región en Arizona",
        subtitle = "Top 15 Regiones con Mayor Tasa",
@@ -150,37 +146,32 @@ graf_region_arizona <- ggplot(arizona_region_top, aes(x = reorder(Region, Death_
 print(graf_region_arizona)
 
 #------------------------------------------------------------------------------
-#Grafica de termperatura en Arizona
-df_temp_arizona <- Arizona_temp_csv %>%
+# Gráfica de temperatura en Arizona
+df_temp_arizona <- Arizona_temp_filtrado %>%
   mutate(
-    # Convertir formato YYYYMM a fecha
-    año = floor(Date / 100),
-    mes_num = Date %% 100,
-    fecha = as.Date(paste(año, mes_num, "01", sep = "-")),
-    temperatura_media = as.numeric(Value),
+    # Crear fecha para extraer mes y estación
+    fecha = as.Date(paste(Year, Month, "01", sep = "-")),
     mes = month(fecha, label = TRUE, abbr = FALSE),
     estacion = case_when(
-      mes_num %in% c(12, 1, 2) ~ "Invierno",
-      mes_num %in% c(3, 4, 5) ~ "Primavera",
-      mes_num %in% c(6, 7, 8) ~ "Verano",
-      mes_num %in% c(9, 10, 11) ~ "Otoño"
+      Month %in% c(12, 1, 2) ~ "Invierno",
+      Month %in% c(3, 4, 5) ~ "Primavera",
+      Month %in% c(6, 7, 8) ~ "Verano",
+      Month %in% c(9, 10, 11) ~ "Otoño"
     )
-  ) %>%
-  filter(!is.na(temperatura_media), año >= 2018, año <= 2023)  # Filtrar años 2018-2023
+  )
 
 # Resumen por año y estación
 df_resumen_arizona <- df_temp_arizona %>%
-  group_by(año, estacion) %>%
+  group_by(Year, estacion) %>%
   summarise(
-    temp_media = mean(temperatura_media, na.rm = TRUE),
-    temp_max = max(temperatura_media, na.rm = TRUE),
-    temp_min = min(temperatura_media, na.rm = TRUE),
-    .groups = "drop"
+    temp_media = mean(Value, na.rm = TRUE),
+    temp_max = max(Value, na.rm = TRUE),
+    temp_min = min(Value, na.rm = TRUE)
   ) %>%
   mutate(estacion = factor(estacion, levels = c("Invierno", "Primavera", "Verano", "Otoño")))
 
 # Gráfico de temperatura
-graf_temp_arizona <- ggplot(df_resumen_arizona, aes(x = as.factor(año), y = temp_media, fill = estacion)) +
+graf_temp_arizona <- ggplot(df_resumen_arizona, aes(x = as.factor(Year), y = temp_media, fill = estacion)) +
   geom_col(position = "dodge", width = 0.7) +
   scale_fill_manual(
     values = c("Invierno" = "#3498db", "Primavera" = "#2ecc71", 
@@ -190,7 +181,7 @@ graf_temp_arizona <- ggplot(df_resumen_arizona, aes(x = as.factor(año), y = tem
     title = "Temperatura Media por Año y Estación",
     subtitle = "Arizona 2018-2023",
     x = "Año",
-    y = "Temperatura Media (°F)",
+    y = "Temperatura Media (°C)",
     fill = "Estación"
   ) +
   theme_minimal(base_size = 12) +
@@ -202,7 +193,7 @@ graf_temp_arizona <- ggplot(df_resumen_arizona, aes(x = as.factor(año), y = tem
 
 print(graf_temp_arizona)
 #------------------------------------------------------------------------------
-#Graficade evolucion temporal de temperatura
+#Grafica de evolucion temporal de temperatura
 df_temp_mensual <- df_temp_arizona %>%
   group_by(año, mes_num) %>%
   summarise(temp_media = mean(temperatura_media, na.rm = TRUE), .groups = "drop") %>%
@@ -220,3 +211,4 @@ graf_temp_evol <- ggplot(df_temp_mensual, aes(x = fecha, y = temp_media)) +
         panel.grid.minor = element_blank())
 
 print(graf_temp_evol)
+
