@@ -1,313 +1,73 @@
 #------------------------------------------------------------------------------
-#Gráfica de suicidios Arizona frente a Islandia
+# COMPARACIÓN SUICIDIOS ARIZONA VS ISLANDIA (ajustado por población)
+#------------------------------------------------------------------------------
+
 library(dplyr)
 library(ggplot2)
 library(tidyr)
 library(scales)
+library(lubridate)
+install.packages("patchwork")
+library(patchwork)
 
 # ============================================================
 # PREPARACIÓN DE DATOS ARIZONA
 # ============================================================
 
-# Filtrar datos de Arizona (2018-2023)
-arizona_suicidios_filtrado <- arizona_suicidios %>%
+arizona_tasas <- arizona_suicidios %>%
   filter(Year >= 2018 & Year <= 2023) %>%
   group_by(Year) %>%
   summarise(
-    Total_Deaths = sum(Deaths, na.rm = TRUE),
-    Total_Population = mean(Population, na.rm = TRUE),
-    Avg_Crude_Rate = mean(Crude_Rate, na.rm = TRUE)
+    Total_Deaths = sum(Deaths, na.rm = TRUE)
   ) %>%
-  mutate(Region = "Arizona")
+  mutate(
+    Region = "Arizona",
+    Poblacion = 7400000,  # Población aproximada
+    Tasa_100k = (Total_Deaths / Poblacion) * 100000
+  )
 
 # ============================================================
 # PREPARACIÓN DE DATOS ISLANDIA
 # ============================================================
 
-# Filtrar y preparar datos de Islandia (2018-2023)
+# Filtrar datos de Islandia (2018-2023)
 suicidios_Islandia <- df %>%
   mutate(Year = as.numeric(Year)) %>%
   filter(Year >= 2018 & Year <= 2023)
 
-# Agregar por año
-islandia_suicidios_filtrado <- suicidios_Islandia %>%
+islandia_tasas <- suicidios_Islandia %>%
+  filter(Age == "Total") %>%  # Solo totales para evitar duplicar
   group_by(Year) %>%
   summarise(
     Total_Deaths = sum(value, na.rm = TRUE)
   ) %>%
-  mutate(Region = "Islandia")
+  mutate(
+    Region = "Islandia",
+    Poblacion = 380000,  # Población aproximada
+    Tasa_100k = (Total_Deaths / Poblacion) * 100000
+  )
 
 # ============================================================
 # COMBINAR DATOS
 # ============================================================
-
-# Unir ambos datasets
-comparacion_total <- bind_rows(
-  arizona_suicidios_filtrado %>% select(Year, Total_Deaths, Region),
-  islandia_suicidios_filtrado
-)
-
-# ============================================================
-# VISUALIZACIÓN 1: Evolución temporal comparada
-# ============================================================
-
-grafico1 <- ggplot(comparacion_total, aes(x = Year, y = Total_Deaths, color = Region, group = Region)) +
-  geom_line(size = 1.2) +
-  geom_point(size = 3) +
-  scale_x_continuous(breaks = 2018:2023) +
-  scale_y_continuous(labels = comma) +
-  labs(
-    title = "Evolución de Suicidios: Islandia vs Arizona (2018-2023)",
-    subtitle = "Número total de muertes por año",
-    x = "Año",
-    y = "Número de Suicidios",
-    color = "Región"
-  ) +
-  theme_minimal() +
-  theme(
-    plot.title = element_text(face = "bold", size = 14),
-    legend.position = "bottom",
-    panel.grid.minor = element_blank()
-  )
-
-print(grafico1)
-
-# ============================================================
-# VISUALIZACIÓN 2: Gráfico de barras comparativo
-# ============================================================
-
-grafico2 <- ggplot(comparacion_total, aes(x = as.factor(Year), y = Total_Deaths, fill = Region)) +
-  geom_bar(stat = "identity", position = "dodge", alpha = 0.8) +
-  geom_text(aes(label = Total_Deaths), 
-            position = position_dodge(width = 0.9), 
-            vjust = -0.5, 
-            size = 3) +
-  scale_y_continuous(labels = comma) +
-  labs(
-    title = "Comparación Anual de Suicidios",
-    subtitle = "Islandia vs Arizona (2018-2023)",
-    x = "Año",
-    y = "Número de Suicidios",
-    fill = "Región"
-  ) +
-  theme_minimal() +
-  theme(
-    plot.title = element_text(face = "bold", size = 14),
-    legend.position = "bottom"
-  )
-
-print(grafico2)
-
-# ============================================================
-# VISUALIZACIÓN 3: Cambio porcentual respecto a 2018
-# ============================================================
-
-comparacion_cambio <- comparacion_total %>%
-  group_by(Region) %>%
-  arrange(Year) %>%
-  mutate(
-    Base_2018 = first(Total_Deaths),
-    Cambio_Porcentual = ((Total_Deaths - Base_2018) / Base_2018) * 100
-  )
-
-grafico3 <- ggplot(comparacion_cambio, aes(x = Year, y = Cambio_Porcentual, color = Region, group = Region)) +
-  geom_line(size = 1.2) +
-  geom_point(size = 3) +
-  geom_hline(yintercept = 0, linetype = "dashed", color = "gray50") +
-  scale_x_continuous(breaks = 2018:2023) +
-  labs(
-    title = "Cambio Porcentual en Suicidios (Base 2018 = 0%)",
-    subtitle = "Islandia vs Arizona",
-    x = "Año",
-    y = "Cambio Porcentual (%)",
-    color = "Región"
-  ) +
-  theme_minimal() +
-  theme(
-    plot.title = element_text(face = "bold", size = 14),
-    legend.position = "bottom",
-    panel.grid.minor = element_blank()
-  )
-
-print(grafico3)
-
-# ============================================================
-# TABLA RESUMEN
-# ============================================================
-
-tabla_resumen <- comparacion_total %>%
-  group_by(Region) %>%
-  summarise(
-    Media_Anual = mean(Total_Deaths, na.rm = TRUE),
-    Total_Periodo = sum(Total_Deaths, na.rm = TRUE),
-    Minimo = min(Total_Deaths, na.rm = TRUE),
-    Maximo = max(Total_Deaths, na.rm = TRUE)
-  )
-
-print("RESUMEN ESTADÍSTICO 2018-2023:")
-print(tabla_resumen)
-
-# ============================================================
-# VISUALIZACIÓN 4: Boxplot comparativo
-# ============================================================
-
-grafico4 <- ggplot(comparacion_total, aes(x = Region, y = Total_Deaths, fill = Region)) +
-  geom_boxplot(alpha = 0.7) +
-  geom_jitter(width = 0.2, alpha = 0.5) +
-  labs(
-    title = "Distribución de Suicidios Anuales (2018-2023)",
-    subtitle = "Comparación entre regiones",
-    x = "Región",
-    y = "Número de Suicidios"
-  ) +
-  theme_minimal() +
-  theme(
-    plot.title = element_text(face = "bold", size = 14),
-    legend.position = "none"
-  )
-
-print(grafico4)
-
-#-----------------------------------------------------------
-#-----------------------------------------------------------
-
-library(dplyr)
-library(ggplot2)
-library(tidyr)
-library(scales)
-
-# ============================================================
-# EXPLORACIÓN INICIAL DE DATOS
-# ============================================================
-
-cat("=== ESTRUCTURA ARIZONA ===\n")
-cat("Total filas:", nrow(arizona_suicidios), "\n")
-cat("Años únicos:", paste(unique(arizona_suicidios$Year), collapse=", "), "\n\n")
-
-cat("Ejemplo de datos Arizona:\n")
-print(head(arizona_suicidios %>% select(Year, Age_Group, Sex, Deaths), 10))
-
-cat("\n=== ESTRUCTURA ISLANDIA ===\n")
-cat("Total filas:", nrow(suicidios_Islandia), "\n")
-cat("Años únicos:", paste(unique(suicidios_Islandia$Year), collapse=", "), "\n")
-cat("Grupos de edad únicos:", paste(unique(suicidios_Islandia$Age), collapse=", "), "\n\n")
-
-cat("Ejemplo de datos Islandia:\n")
-print(head(suicidios_Islandia %>% select(Year, Sex, Age, value), 10))
-
-# ============================================================
-# PREPARACIÓN DE DATOS ARIZONA
-# ============================================================
-
-# Para Arizona: sumar Deaths por año (eliminar NA)
-arizona_anual <- arizona_suicidios %>%
-  filter(Year >= 2018 & Year <= 2023) %>%
-  group_by(Year) %>%
-  summarise(
-    Total_Deaths = sum(Deaths, na.rm = TRUE),
-    Num_Registros = n(),
-    Registros_Con_Datos = sum(!is.na(Deaths))
-  ) %>%
-  mutate(Region = "Arizona")
-
-cat("\n=== TOTALES ARIZONA POR AÑO ===\n")
-print(arizona_anual)
-
-# ============================================================
-# PREPARACIÓN DE DATOS ISLANDIA
-# ============================================================
-
-# Para Islandia: solo tomar filas donde Age == "Total" para evitar duplicar
-islandia_anual <- suicidios_Islandia %>%
-  filter(Age == "Total") %>%  # CRÍTICO: solo totales por año
-  group_by(Year) %>%
-  summarise(
-    Total_Deaths = sum(value, na.rm = TRUE),
-    Num_Registros = n()
-  ) %>%
-  mutate(Region = "Islandia")
-
-cat("\n=== TOTALES ISLANDIA POR AÑO ===\n")
-print(islandia_anual)
-
-# ============================================================
-# VERIFICACIÓN DE POBLACIONES
-# ============================================================
-
-cat("\n=== CONTEXTO POBLACIONAL ===\n")
-cat("Población Arizona (aprox. 2023): 7.4 millones\n")
-cat("Población Islandia (aprox. 2023): 380,000\n")
-cat("Ratio: Arizona es ~19.5 veces más grande\n\n")
-
-# Calcular tasas por 100,000 habitantes
-arizona_tasas <- arizona_anual %>%
-  mutate(
-    Poblacion = 7400000,  # Aproximado
-    Tasa_100k = (Total_Deaths / Poblacion) * 100000
-  )
-
-islandia_tasas <- islandia_anual %>%
-  mutate(
-    Poblacion = 380000,  # Aproximado
-    Tasa_100k = (Total_Deaths / Poblacion) * 100000
-  )
-
-cat("=== TASAS POR 100,000 HABITANTES ===\n")
-print(arizona_tasas %>% select(Year, Total_Deaths, Tasa_100k))
-print(islandia_tasas %>% select(Year, Total_Deaths, Tasa_100k))
-
-# ============================================================
-# COMBINAR DATOS
-# ============================================================
-
-comparacion_absoluta <- bind_rows(
-  arizona_anual %>% select(Year, Total_Deaths, Region),
-  islandia_anual %>% select(Year, Total_Deaths, Region)
-)
 
 comparacion_tasas <- bind_rows(
-  arizona_tasas %>% select(Year, Region, Tasa_100k),
-  islandia_tasas %>% select(Year, Region, Tasa_100k)
+  arizona_tasas %>% select(Year, Region, Tasa_100k, Total_Deaths),
+  islandia_tasas %>% select(Year, Region, Tasa_100k, Total_Deaths)
 )
 
 # ============================================================
-# VISUALIZACIÓN 1: Números absolutos
+# GRÁFICO: Tasas ajustadas por población (COMPARACIÓN JUSTA)
 # ============================================================
 
-grafico1 <- ggplot(comparacion_absoluta, aes(x = Year, y = Total_Deaths, color = Region, group = Region)) +
-  geom_line(size = 1.2) +
-  geom_point(size = 3) +
-  geom_text(aes(label = Total_Deaths), vjust = -1, size = 3) +
-  scale_x_continuous(breaks = 2018:2023) +
-  scale_y_continuous(labels = comma) +
-  labs(
-    title = "Suicidios en Números Absolutos: Islandia vs Arizona (2018-2023)",
-    subtitle = "⚠️ Arizona tiene ~19.5 veces más población",
-    x = "Año",
-    y = "Número de Suicidios",
-    color = "Región"
-  ) +
-  theme_minimal() +
-  theme(
-    plot.title = element_text(face = "bold", size = 14),
-    legend.position = "bottom",
-    panel.grid.minor = element_blank()
-  )
-
-print(grafico1)
-
-# ============================================================
-# VISUALIZACIÓN 2: Tasas ajustadas por población
-# ============================================================
-
-grafico2 <- ggplot(comparacion_tasas, aes(x = Year, y = Tasa_100k, color = Region, group = Region)) +
-  geom_line(size = 1.2) +
+graf_tasas_comparadas <- ggplot(comparacion_tasas, aes(x = Year, y = Tasa_100k, color = Region, group = Region)) +
+  geom_line(linewidth = 1.2) +
   geom_point(size = 3) +
   geom_text(aes(label = round(Tasa_100k, 1)), vjust = -1, size = 3) +
   scale_x_continuous(breaks = 2018:2023) +
   labs(
     title = "Tasa de Suicidios por 100,000 Habitantes",
-    subtitle = "Comparación ajustada por población",
+    subtitle = "Comparación ajustada por población (2018-2023)",
     x = "Año",
     y = "Tasa por 100,000 hab.",
     color = "Región"
@@ -319,65 +79,13 @@ grafico2 <- ggplot(comparacion_tasas, aes(x = Year, y = Tasa_100k, color = Regio
     panel.grid.minor = element_blank()
   )
 
-print(grafico2)
-
-# ============================================================
-# VISUALIZACIÓN 3: Comparación lado a lado
-# ============================================================
-
-grafico3 <- ggplot(comparacion_absoluta, aes(x = as.factor(Year), y = Total_Deaths, fill = Region)) +
-  geom_bar(stat = "identity", position = "dodge", alpha = 0.8) +
-  geom_text(aes(label = Total_Deaths), 
-            position = position_dodge(width = 0.9), 
-            vjust = -0.5, 
-            size = 3) +
-  scale_y_continuous(labels = comma, expand = expansion(mult = c(0, 0.1))) +
-  labs(
-    title = "Comparación Anual de Suicidios",
-    subtitle = "Números absolutos (poblaciones muy diferentes)",
-    x = "Año",
-    y = "Número de Suicidios",
-    fill = "Región"
-  ) +
-  theme_minimal() +
-  theme(
-    plot.title = element_text(face = "bold", size = 14),
-    legend.position = "bottom"
-  )
-
-print(grafico3)
-
-# ============================================================
-# VISUALIZACIÓN 4: Facetas para mejor comparación
-# ============================================================
-
-grafico4 <- ggplot(comparacion_tasas, aes(x = Year, y = Tasa_100k, group = 1)) +
-  geom_line(color = "steelblue", size = 1.2) +
-  geom_point(color = "steelblue", size = 3) +
-  geom_text(aes(label = round(Tasa_100k, 1)), vjust = -1, size = 3) +
-  facet_wrap(~Region, scales = "free_y") +
-  scale_x_continuous(breaks = 2018:2023) +
-  labs(
-    title = "Evolución de Tasas de Suicidio (2018-2023)",
-    subtitle = "Por 100,000 habitantes - Escalas independientes",
-    x = "Año",
-    y = "Tasa por 100,000 hab."
-  ) +
-  theme_minimal() +
-  theme(
-    plot.title = element_text(face = "bold", size = 14),
-    strip.text = element_text(face = "bold", size = 12)
-  )
-
-print(grafico4)
+print(graf_tasas_comparadas)
 
 # ============================================================
 # TABLA RESUMEN COMPLETA
 # ============================================================
 
-cat("\n=== RESUMEN COMPARATIVO 2018-2023 ===\n\n")
-
-resumen_completo <- bind_rows(
+tabla_resumen_completa <- bind_rows(
   arizona_tasas %>% 
     summarise(
       Region = "Arizona",
@@ -396,4 +104,175 @@ resumen_completo <- bind_rows(
     )
 )
 
-print(resumen_completo)
+cat("\n=== RESUMEN COMPARATIVO 2018-2023 ===\n")
+print(tabla_resumen_completa)
+
+# ============================================================
+# PREPARACIÓN DATOS TEMPERATURA ARIZONA
+# ============================================================
+
+df_temp_arizona <- Arizona_temp_filtrado %>%
+  mutate(
+    fecha = as.Date(paste(Year, Month, "01", sep = "-")),
+    mes = month(fecha, label = TRUE, abbr = FALSE),
+    estacion = case_when(
+      Month %in% c(12, 1, 2) ~ "Invierno",
+      Month %in% c(3, 4, 5) ~ "Primavera",
+      Month %in% c(6, 7, 8) ~ "Verano",
+      Month %in% c(9, 10, 11) ~ "Otoño"
+    )
+  )
+
+df_resumen_arizona <- df_temp_arizona %>%
+  group_by(Year, estacion) %>%
+  summarise(
+    temp_media = mean(Value, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  group_by(Year) %>%
+  summarise(temp_media = mean(temp_media, na.rm = TRUE))
+
+# ============================================================
+# PREPARACIÓN DATOS TEMPERATURA ISLANDIA
+# ============================================================
+
+df_temp_islandia <- Islandia_temp_json %>%
+  spread_all() %>%
+  select(fecha, temperatura_media) %>%
+  mutate(
+    fecha = as.Date(fecha),
+    temperatura_media = as.numeric(temperatura_media),
+    año = year(fecha),
+    mes_num = month(fecha),
+    estacion = case_when(
+      mes_num %in% c(12, 1, 2) ~ "Invierno",
+      mes_num %in% c(3, 4, 5) ~ "Primavera",
+      mes_num %in% c(6, 7, 8) ~ "Verano",
+      mes_num %in% c(9, 10, 11) ~ "Otoño"
+    )
+  )
+
+df_resumen_islandia <- df_temp_islandia %>%
+  group_by(año) %>%
+  summarise(
+    temp_media = mean(temperatura_media, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  rename(Year = año)
+
+# ============================================================
+# GRÁFICOS: TEMPERATURA (línea) vs SUICIDIOS (barras)
+# ============================================================
+
+# --- ARIZONA: Temperatura (línea) vs Suicidios (barras) ---
+# Factor de escala para el segundo eje
+factor_escala_az <- max(arizona_temp_suic$Tasa_100k, na.rm = TRUE) / 
+  max(arizona_temp_suic$temp_media, na.rm = TRUE)
+
+graf_temp_suic_arizona <- ggplot(arizona_temp_suic, aes(x = Year)) +
+  # Barras de suicidios
+  geom_col(aes(y = Tasa_100k, fill = "Tasa de Suicidios"), 
+           alpha = 0.6, width = 0.7) +
+  # Línea de temperatura
+  geom_line(aes(y = temp_media * factor_escala_az, color = "Temperatura"), 
+            linewidth = 1.5) +
+  geom_point(aes(y = temp_media * factor_escala_az, color = "Temperatura"), 
+             size = 4) +
+  # Configuración de ejes
+  scale_y_continuous(
+    name = "Tasa de Suicidios por 100,000 hab.",
+    sec.axis = sec_axis(~ . / factor_escala_az, name = "Temperatura Media (°C)")
+  ) +
+  scale_x_continuous(breaks = 2018:2023) +
+  scale_fill_manual(
+    values = c("Tasa de Suicidios" = "#e74c3c")
+  ) +
+  scale_color_manual(
+    values = c("Temperatura" = "#f39c12")
+  ) +
+  labs(
+    title = "Evolución Temperatura vs Tasa de Suicidios",
+    subtitle = "Arizona (2018-2023)",
+    x = "Año",
+    fill = "",
+    color = ""
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold", size = 14),
+    legend.position = "bottom",
+    axis.title.y.left = element_text(color = "#e74c3c"),
+    axis.text.y.left = element_text(color = "#e74c3c"),
+    axis.title.y.right = element_text(color = "#f39c12"),
+    axis.text.y.right = element_text(color = "#f39c12"),
+    panel.grid.minor = element_blank()
+  )
+
+print(graf_temp_suic_arizona)
+
+# --- ISLANDIA: Temperatura (línea) vs Suicidios (barras) ---
+# Factor de escala para el segundo eje
+factor_escala_isl <- max(islandia_temp_suic$Tasa_100k, na.rm = TRUE) / 
+  max(islandia_temp_suic$temp_media, na.rm = TRUE)
+
+graf_temp_suic_islandia <- ggplot(islandia_temp_suic, aes(x = Year)) +
+  # Barras de suicidios
+  geom_col(aes(y = Tasa_100k, fill = "Tasa de Suicidios"), 
+           alpha = 0.6, width = 0.7) +
+  # Línea de temperatura
+  geom_line(aes(y = temp_media * factor_escala_isl, color = "Temperatura"), 
+            linewidth = 1.5) +
+  geom_point(aes(y = temp_media * factor_escala_isl, color = "Temperatura"), 
+             size = 4) +
+  # Configuración de ejes
+  scale_y_continuous(
+    name = "Tasa de Suicidios por 100,000 hab.",
+    sec.axis = sec_axis(~ . / factor_escala_isl, name = "Temperatura Media (°C)")
+  ) +
+  scale_x_continuous(breaks = 2018:2023) +
+  scale_fill_manual(
+    values = c("Tasa de Suicidios" = "#2ecc71")
+  ) +
+  scale_color_manual(
+    values = c("Temperatura" = "#3498db")
+  ) +
+  labs(
+    title = "Evolución Temperatura vs Tasa de Suicidios",
+    subtitle = "Islandia (2018-2023)",
+    x = "Año",
+    fill = "",
+    color = ""
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold", size = 14),
+    legend.position = "bottom",
+    axis.title.y.left = element_text(color = "#2ecc71"),
+    axis.text.y.left = element_text(color = "#2ecc71"),
+    axis.title.y.right = element_text(color = "#3498db"),
+    axis.text.y.right = element_text(color = "#3498db"),
+    panel.grid.minor = element_blank()
+  )
+
+print(graf_temp_suic_islandia)
+
+# --- COMPARACIÓN CONJUNTA con facetas (dos gráficos lado a lado) ---
+library(patchwork)
+
+graf_comparacion_completa <- graf_temp_suic_arizona + graf_temp_suic_islandia +
+  plot_layout(ncol = 2) +
+  plot_annotation(
+    title = "Comparación: Temperatura vs Tasa de Suicidios",
+    subtitle = "Arizona vs Islandia (2018-2023)",
+    theme = theme(
+      plot.title = element_text(face = "bold", size = 16, hjust = 0.5),
+      plot.subtitle = element_text(size = 12, hjust = 0.5)
+    )
+  )
+
+print(graf_comparacion_completa)
+
+
+# ============================================================
+# Podria estar bien enfrentar suicidios por edad utilizando arizona_suicidios y suicidios_Islandia
+# Que es donde estan separados los suicidios por edad y sexo
