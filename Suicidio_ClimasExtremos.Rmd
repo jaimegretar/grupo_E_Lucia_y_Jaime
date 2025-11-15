@@ -273,3 +273,60 @@ df <- as.data.frame(Islandia_suicidio_json)
 View(df)
 ```
 
+## 1.3. Limpieza y preparación de datos 
+Los archivos importados contienen mucha información que no es importante para nuestro seminario. Por lo que, vamos a filtrar todos los archivos para quedarnos unicamente con datos relacionados con suicidios y temperaturas, concretamente entre los años 2018 y 2023.
+### 1.3.1. Limpieza y preparación de datos de temperatura
+#### Arizona:
+Filtramos del Arizona_temp_csv los datos de temperatura media entre los años 2018 y 2023, y creamos nuevas columnas para el año, mes, estación del año, etc.
+```{r}
+Arizona_temp_filtrado <- Arizona_temp_csv %>%
+  filter(Date >= 201801 & Date <= 202312)
+
+View(Arizona_temp_filtrado)
+```
+#### Islandia:
+En el caso de Islandia , los datos ya están filtrados en el archivo JSON, por lo que no es necesario realizar un filtrado adicional.
+
+### 1.3.2. Limpieza y preparación de datos de suicidios
+#### Arizona:
+Filtramos los datos de suicidios de Arizona pero solo del segundo csv ya que el primero es por regiones y no especifica los años.
+Primeramente hay que convertir los datos a tipo numer ico para poder trabajar con ellos.
+```{r}
+# Limpieza de datos - convertir a numérico
+arizona_csv <- datos_separados %>%
+  mutate(
+    Year = as.numeric(Year),
+    Deaths = as.numeric(gsub("[^0-9]", "", Deaths)),
+    Population = as.numeric(gsub(",", "", Population)),  # Solo quitar comas
+    Crude_Rate = as.numeric(gsub("[*]", "", Crude_Rate)),
+    Age_Adjusted_Rate = as.numeric(gsub("[*]", "", Age_Adjusted_Rate)),
+    Years_Potential_Life_Lost = as.numeric(gsub(",", "", Years_Potential_Life_Lost))
+  )
+
+# Ver resumen
+View(arizona_csv)
+```
+Posteriormente, filtramos solo los suicidios entre los años 2018 y 2023.
+```{r}
+# Filtrar solo suicidios
+arizona_suicidios <- arizona_csv %>%
+  filter(Intent == "Suicide")
+
+# Ver el resultado
+View(arizona_suicidios)
+```
+#### Islandia:
+Filtramos los suicidios en Islandia entre los años 2018 y 2023.
+```{r}
+suicidios_Islandia <- df %>%
+  mutate(Year = as.numeric(Year)) %>%
+  filter(Year >= 2018 & Year <= 2023)
+
+# Ver años únicos
+unique(suicidios_Islandia$Year)
+
+# Contar observaciones por año
+suicidios_Islandia %>%
+  count(Year)
+view(suicidios_Islandia)
+```

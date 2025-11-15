@@ -73,6 +73,7 @@ datos_separados <- datos2 %>%
 # Ver resultado
 head(datos_separados)
 str(datos_separados)
+View(datos_separados)
 
 # Limpieza de datos - convertir a numérico
 arizona_csv <- datos_separados %>%
