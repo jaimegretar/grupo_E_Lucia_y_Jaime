@@ -702,7 +702,7 @@ cor_arizona
 
 En Arizona, el coeficiente de correlación de Pearson entre temperatura media anual y número de suicidios es muy cercano a cero, lo que indica que, con los
 datos disponibles, **no se observa una relación lineal clara** entre ambas variables.
-####Islandia:
+#### Islandia:
 ```{r}
 # Suicidios totales por año en Islandia (usando suicidios_Islandia)
 
