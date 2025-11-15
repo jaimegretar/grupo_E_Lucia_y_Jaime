@@ -20,7 +20,13 @@ Arizona_temp_csv <- read_delim(file="INPUT/DATA/Arizona/Temperatura/data.csv", d
 View(Arizona_temp_csv)
 
 Arizona_temp_filtrado <- Arizona_temp_csv %>%
-  filter(Date >= 201801 & Date <= 202312)
+  filter(Date >= 201801 & Date <= 202312) %>%
+  mutate(
+    Year = Date %/% 100,
+    Month = Date %% 100,
+    Value = round((Value - 32) * 5/9, 1)
+  ) %>%
+  select(Year, Month, Value)
 
 View(Arizona_temp_filtrado)
 

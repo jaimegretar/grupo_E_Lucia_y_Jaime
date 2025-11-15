@@ -277,10 +277,16 @@ View(df)
 Los archivos importados contienen mucha información que no es importante para nuestro seminario. Por lo que, vamos a filtrar todos los archivos para quedarnos unicamente con datos relacionados con suicidios y temperaturas, concretamente entre los años 2018 y 2023.
 ### 1.3.1. Limpieza y preparación de datos de temperatura
 #### Arizona:
-Filtramos del Arizona_temp_csv los datos de temperatura media entre los años 2018 y 2023, y creamos nuevas columnas para el año, mes, estación del año, etc.
+Filtramos del Arizona_temp_csv los datos de temperatura media entre los años 2018 y 2023, y creamos nuevas columnas para el año, mes y convertimos la temperatura de Fº a Cº.
 ```{r}
 Arizona_temp_filtrado <- Arizona_temp_csv %>%
-  filter(Date >= 201801 & Date <= 202312)
+  filter(Date >= 201801 & Date <= 202312) %>%
+  mutate(
+    Year = Date %/% 100,
+    Month = Date %% 100,
+    Value = round((Value - 32) * 5/9, 1)
+  ) %>%
+  select(Year, Month, Value)
 
 View(Arizona_temp_filtrado)
 ```

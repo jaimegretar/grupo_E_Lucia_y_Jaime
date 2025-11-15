@@ -152,13 +152,17 @@ print(graf_region_arizona)
 #------------------------------------------------------------------------------
 #Grafica de termperatura en Arizona
 df_temp_arizona <- Arizona_temp_csv %>%
+  filter(Date >= 201801 & Date <= 202312) %>%  # Filtrar primero
   mutate(
-    # Convertir formato YYYYMM a fecha
-    año = floor(Date / 100),
+    # Convertir de Fahrenheit a Celsius
+    temperatura_media = (Value - 32) * 5/9,
+    # Extraer año y mes
+    año = Date %/% 100,
     mes_num = Date %% 100,
+    # Crear fecha
     fecha = as.Date(paste(año, mes_num, "01", sep = "-")),
-    temperatura_media = as.numeric(Value),
     mes = month(fecha, label = TRUE, abbr = FALSE),
+    # Clasificar por estación
     estacion = case_when(
       mes_num %in% c(12, 1, 2) ~ "Invierno",
       mes_num %in% c(3, 4, 5) ~ "Primavera",
@@ -166,7 +170,7 @@ df_temp_arizona <- Arizona_temp_csv %>%
       mes_num %in% c(9, 10, 11) ~ "Otoño"
     )
   ) %>%
-  filter(!is.na(temperatura_media), año >= 2018, año <= 2023)  # Filtrar años 2018-2023
+  filter(!is.na(temperatura_media))
 
 # Resumen por año y estación
 df_resumen_arizona <- df_temp_arizona %>%
@@ -190,7 +194,7 @@ graf_temp_arizona <- ggplot(df_resumen_arizona, aes(x = as.factor(año), y = tem
     title = "Temperatura Media por Año y Estación",
     subtitle = "Arizona 2018-2023",
     x = "Año",
-    y = "Temperatura Media (°F)",
+    y = "Temperatura Media (°C)",  # Cambiado a Celsius
     fill = "Estación"
   ) +
   theme_minimal(base_size = 12) +
@@ -202,7 +206,7 @@ graf_temp_arizona <- ggplot(df_resumen_arizona, aes(x = as.factor(año), y = tem
 
 print(graf_temp_arizona)
 #------------------------------------------------------------------------------
-#Graficade evolucion temporal de temperatura
+#Grafica de evolucion temporal de temperatura
 df_temp_mensual <- df_temp_arizona %>%
   group_by(año, mes_num) %>%
   summarise(temp_media = mean(temperatura_media, na.rm = TRUE), .groups = "drop") %>%
