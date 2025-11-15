@@ -34,16 +34,16 @@ Islandia_temp_json %>%
 Arizona_suicidioRegion_csv <- read_csv(
   file = "INPUT/DATA/Arizona/Salud/HDPulse_data_export.csv",
   col_names = c(
-    "Region",
-    "FIPS",
-    "Death_Rate",
-    "CI_Lower",
-    "CI_Upper",
-    "Num_Deaths",
-    "Trend",
-    "Annual_Change",
-    "CI_Lower_Change",
-    "CI_Upper_Change"
+    "Region/Condado",
+    "Codigo_FIPS",
+    "Muertes_100,000",
+    "CI_Inferior",
+    "CI_Superior",
+    "Num_Muertes_Anual",
+    "Tendencia",
+    "Tendencia_Anual",
+    "CI_Inferior_rep",
+    "CI_Superior_rep"
   ),
   skip = 1,              # Saltar la fila de encabezado defectuosa
   trim_ws = TRUE,
@@ -110,20 +110,20 @@ View(df)
 str(df)
 
 <<<<<<< HEAD
-df_filtered <- df %>%
+suicidios_Islandia <- df %>%
   mutate(Year = as.numeric(Year)) %>%
   filter(Year >= 2018 & Year <= 2023)
 
 # Verificar el resultado
-str(df_filtered)
-summary(df_filtered$Year)
+str(suicidios_Islandia)
+summary(suicidios_Islandia$Year)
 
 # Ver años únicos
-unique(df_filtered$Year)
+unique(suicidios_Islandia$Year)
 
 # Contar observaciones por año
-df_filtered %>%
+suicidios_Islandia %>%
   count(Year)
-view(df_filtered)
+view(suicidios_Islandia)
 =======
 >>>>>>> c8c57a3c1d9f5f40acb7a111cdc8eca59e0a6027

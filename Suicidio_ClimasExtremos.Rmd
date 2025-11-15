@@ -194,7 +194,7 @@ if __name__ == "__main__":
 
 ### 1.2.1 Importacion de datos de temperatura:
 #### Arizona:
-Obtenemos los datos de temperatura de Arizona, desde un archivo .csv y desde un archivo .json
+Obtenemos los datos de temperatura de Arizona, desde un archivo .csv y desde un archivo .json:
 ```{r}
 # Importacion datos temperatura Arizona .json
 Arizona_temp_json <- fromJSON(file = "INPUT/DATA/Arizona/Temperatura/data.json")
@@ -206,6 +206,8 @@ Arizona_temp_json %>%
 Arizona_temp_csv <- read_delim(file="INPUT/DATA/Arizona/Temperatura/data.csv", delim = ",")
 View(Arizona_temp_csv)
 ```
+Aunque disponemos de los datos de temperatura en ambos formatos, optaremos por utilizar el archivo .csv, ya que es más sencillo de manejar y el formato .json nos ha generado problemas.
+
 #### Islandia:
 Importacion de los datos de temperatura de Islandia (Reikiavik) en .json, en el periodo del 2018-2023:
 ```{r}
@@ -217,30 +219,30 @@ Islandia_temp_json %>%
 ```
 ### 1.2.2. Importacion de datos de suicidios:
 #### Arizona:
-Importamos los datos de suicidios de Arizona (relacionados con salud mental) desde un archivo CSV. Se especifican los nombres de las columnas y se salta la fila de encabezado defectuosa.
+Importamos los datos de suicidios de Arizona (relacionados con salud mental) desde un archivo CSV. Se especifican los nombres de las columnas y se salta la fila de encabezado que nos genera problemas en la importación.
 ```{r}
 Arizona_suicidioRegion_csv <- read_csv(
-  file = "INPUT/DATA/Arizona/Salud/HDPulse_data_export.csv",
-  col_names = c(
-    "Region",
-    "FIPS",
-    "Death_Rate",
-    "CI_Lower",
-    "CI_Upper",
-    "Num_Deaths",
-    "Trend",
-    "Annual_Change",
-    "CI_Lower_Change",
-    "CI_Upper_Change"
-  ),
-  skip = 1,
-  trim_ws = TRUE,
-  show_col_types = FALSE
+  file = "INPUT/DATA/Arizona/Salud/HDPulse_data_export.csv",
+  col_names = c(
+    "Region/Condado",
+    "Codigo_FIPS",
+    "Muertes_100,000",
+    "CI_Inferior",
+    "CI_Superior",
+    "Num_Muertes_Anual",
+    "Tendencia",
+    "Tendencia_Anual",
+    "CI_Inferior_rep",
+    "CI_Superior_rep"
+  ),
+  skip = 1,              # Para saltar la fila de encabezado que da errores
+  trim_ws = TRUE,
+  show_col_types = FALSE
 )
 
 View(Arizona_suicidioRegion_csv)
 ```
-Otro archivo .csv para complementar los datos de suicidios de Arizona desde el 2018-2023.
+Otro archivo .csv para complementar los datos de suicidios de Arizona desde el 2018-2023 (se utilizo la ayuda de la IA para poder importar el archivo correctamente ya que contenia los datos encapsulados con dobles comillas y más caracteres que dificultaban su procesamiento):
 ```{r}
 # Importacion suicidios Arizona 2 del 2018 al 2023
 datos2 <- read.csv("INPUT/DATA/Arizona/Salud/reports-data-export.csv",
@@ -260,8 +262,7 @@ datos_separados <- datos2 %>%
   select(-1) # Eliminar la primera columna original
 
 # Ver resultado
-head(datos_separados)
-str(datos_separados)
+View(datos_separados)
 ```
 #### Islandia:
 Importamos los datos de suicidios de Islandia desde un archivo JSON con formato JSON-stat.
