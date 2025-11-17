@@ -6,6 +6,12 @@ library(jsonlite)
 install.packages("plotly")
 library(plotly)
 library(lubridate)
+#install.packages(c("dplyr", "stringr", "ggplot2", "gganimate", "gifski"))
+library(dplyr)      
+library(stringr)    
+library(ggplot2)    
+library(gganimate)  
+library(gifski)     
 
 #Grafica suicidios en Islandia
 df_clean <- suicidios_Islandia
@@ -211,4 +217,246 @@ graf_temp_evol <- ggplot(df_temp_mensual, aes(x = fecha, y = temp_media)) +
         panel.grid.minor = element_blank())
 
 print(graf_temp_evol)
+
+#------------------------------------------------------------------------------
+#15-11-2025
+#------------------------------------------------------------------------------
+#------------------------------------------------csdoifnnsipegfnsperigfpiser g
+
+#Usamos filter para quedarnos con los datos de suicidios entre 2018 y 2023.
+arizona_edad_simpl <- arizona_suicidios %>%
+  filter(
+    !is.na(Deaths),
+    !is.na(Year),
+    Age_Group != "Total",
+    Year >= 2018, Year <= 2023
+  ) %>%
+  
+  # sacamos el primer número de la categoría de edad
+  mutate(
+    edad_inicio = as.numeric(str_extract(Age_Group, "\\d+")),
+    #clasificamos la edad de inicio en 4 grupos.
+    Grupo_edad = case_when(
+      edad_inicio < 20 ~ "0-19",
+      edad_inicio < 40 ~ "20-39",
+      edad_inicio < 60 ~ "40-59",
+      TRUE            ~ "60+"
+    )
+  ) %>%
+  #eliminamos filas que no tengan una edad de inicio valida
+  filter(!is.na(edad_inicio)) %>%
+  group_by(Year, Grupo_edad) %>%
+  #calculamos el total de muertes por grupo de edad y año.
+  summarise(
+    Total_Deaths = sum(Deaths, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  mutate(Pais = "Arizona")
+
+# Hacemos lo mismo para Islandia.
+islandia_edad_simpl <- df_filtered %>%
+  filter(
+    Age != "Total",
+    Sex == "Total",
+    Year >= 2018, Year <= 2023,
+    !is.na(value)
+  ) %>%
+  #creamos la columna de edad de inicio y grupo de edad.
+  mutate(
+    edad_inicio = as.numeric(str_extract(Age, "\\d+")),
+    Grupo_edad = case_when(
+      edad_inicio < 20 ~ "0-19",
+      edad_inicio < 40 ~ "20-39",
+      edad_inicio < 60 ~ "40-59",
+      TRUE            ~ "60+"
+    )
+  ) %>%
+  # eliminamos filas sin edad de inicio valida.
+  filter(!is.na(edad_inicio)) %>%
+  group_by(Year, Grupo_edad) %>%
+  #calculamos el total de muertes por grupo de edad y año.
+  summarise(
+    Total_Deaths = sum(value, na.rm = TRUE),
+    .groups = "drop" # el drop es para evitar mensajes de agrupamiento.
+  ) %>%
+  mutate(Pais = "Islandia")
+
+# Unimos ambos data frames para la comparación
+comparacion_edad_simpl <- bind_rows(arizona_edad_simpl, islandia_edad_simpl) %>%
+  mutate(
+    Grupo_edad = factor(Grupo_edad,
+                        levels = c("0-19", "20-39", "40-59", "60+"))
+  )
+# Hacemos el gráfico comparativo de suicidios por grupo de edad en ambos paises.
+graf_comp_edad_simpl <- ggplot(
+  comparacion_edad_simpl,
+  aes(x = Year, y = Total_Deaths,
+      color = Grupo_edad, group = Grupo_edad)
+) +
+  geom_line(size = 1.2) +
+  geom_point(size = 2) +
+  facet_wrap(~ Pais, scales = "free_y") +   # escala libre por país
+  labs(
+    title = "Suicidios por Grandes Grupos de Edad",
+    subtitle = "Comparación Arizona vs Islandia (2018–2023)",
+    x = "Año",
+    y = "Número de suicidios",
+    color = "Grupo de edad"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    plot.title = element_text(face = "bold", size = 16),
+    panel.grid.minor = element_blank(),
+    legend.position = "bottom"
+  )
+
+print(graf_comp_edad_simpl) #grafico de suicidios por grupo de edad en los dos sitios
+
+#Realizamos la animación con gganimate. Si no entiendes algo en el video explica : https://youtu.be/pnSMtc1PH_w?si=EmseR8NhhXK7Yrkm
+p_anim_edad <- ggplot(
+  comparacion_edad_simpl,
+  aes(x = Grupo_edad,
+      y = Total_Deaths,
+      fill = Grupo_edad)
+) +
+  geom_col(width = 0.7) +
+  facet_wrap(~ Pais, scales = "free_y") +   # free_y para que cada país tenga su propia escala y se vea mejor
+  labs(
+    title = "Suicidios por grupos de edad",
+    subtitle = "Año: {closest_state}",
+    x = "Grupo de edad",
+    y = "Número de suicidios",
+    fill = "Grupos de edad"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    plot.title = element_text(face = "bold", size = 16),
+    panel.grid.minor = element_blank(),
+    legend.position = "bottom"
+  ) +
+  transition_states(
+    Year,
+    transition_length = 2,
+    state_length = 1
+  ) +
+  ease_aes("linear")
+
+# Generamos la animacion. Laa he bajado la velocidad que al tener solo 5 años iba muy rapido.
+anim_edad <- animate(
+  p_anim_edad,
+  nframes = 120,
+  fps = 6,
+  width = 900,
+  height = 500,
+  renderer = gifski_renderer()
+)
+
+anim_edad
+# Pa guardar la imagen quitar el hastag, pero esque se me guarda cada vez que ejecuto por eso lo comento.
+# anim_save("suicidios_grupos_edad_Arizona_Islandia.gif", animation = anim_edad)
+
+
+
+
+
+
+#Ahora vamos a realizar un análisis de correlación entre temperatura media anual y suicidios anuales. Para ver si realmente hay una relación entre ambas variables.
+arizona_suic_anual <- arizona_suicidios %>%
+  filter(Year >= 2018, Year <= 2023,
+         !is.na(Deaths)) %>%
+  group_by(Year) %>%
+  summarise(
+    suicidios_totales = sum(Deaths, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+arizona_temp_anual <- df_temp_arizona %>%
+  group_by(año) %>%
+  summarise(
+    temp_media_anual = mean(temperatura_media, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  rename(Year = año)
+
+#Unimos los dos data frames.
+arizona_temp_suic <- inner_join(arizona_temp_anual,
+                                arizona_suic_anual,
+                                by = "Year")
+
+arizona_temp_suic
+
+# Hacemos un scatter plot con línea de regresión.
+graf_arizona_temp_suic <- ggplot(arizona_temp_suic,
+                                 aes(x = temp_media_anual,
+                                     y = suicidios_totales)) +
+  geom_point(size = 3) +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(
+    title = "Arizona: Suicidios vs Temperatura media anual",
+    subtitle = "2018–2023",
+    x = "Temperatura media anual (°F)",
+    y = "Número de suicidios"
+  ) +
+  theme_minimal(base_size = 12)
+
+print(graf_arizona_temp_suic)
+
+# Correlación simple que es el coeficiente de correlación de Pearson.
+cor_arizona <- cor(arizona_temp_suic$temp_media_anual,
+                   arizona_temp_suic$suicidios_totales,
+                   use = "complete.obs") # complete.obs lo ponemos para evitar NAs
+cor_arizona # ver el valor
+
+#Ahora en Islandia:
+islandia_suic_anual <- df_filtered %>%
+  filter(Year >= 2018, Year <= 2023,
+         Sex == "Total",        
+         !is.na(value)) %>%
+  group_by(Year) %>%
+  summarise(
+    suicidios_totales = sum(value, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+#La temp media a partir de df_temp que ya tenemos creada.
+islandia_temp_anual <- df_temp %>%
+  group_by(año) %>%
+  summarise(
+    temp_media_anual = mean(temperatura_media, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  rename(Year = año)
+
+#Unimos los dos data frames.
+islandia_temp_suic <- inner_join(islandia_temp_anual,
+                                 islandia_suic_anual,
+                                 by = "Year")
+
+islandia_temp_suic
+
+# Hacemos un scatter plot con línea de regresión.
+graf_islandia_temp_suic <- ggplot(islandia_temp_suic,
+                                  aes(x = temp_media_anual,
+                                      y = suicidios_totales)) +
+  geom_point(size = 3) +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(
+    title = "Islandia: Suicidios vs Temperatura media anual",
+    subtitle = "2018–2023",
+    x = "Temperatura media anual (°C)",
+    y = "Número de suicidios"
+  ) +
+  theme_minimal(base_size = 12)
+
+print(graf_islandia_temp_suic)
+# Correlación simple que es el coeficiente de correlación de Pearson.
+cor_islandia <- cor(islandia_temp_suic$temp_media_anual,
+                    islandia_temp_suic$suicidios_totales,
+                    use = "complete.obs") # complete.obs lo ponemos para evitar NAs
+cor_islandia # da un valor negativo.
+
+
+
+
+
 
