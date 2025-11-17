@@ -199,11 +199,11 @@ graf_temp_arizona <- ggplot(df_resumen_arizona, aes(x = as.factor(Year), y = tem
 
 print(graf_temp_arizona)
 #------------------------------------------------------------------------------
-#Grafica de evolucion temporal de temperatura
-df_temp_mensual <- df_temp_arizona %>%
-  group_by(año, mes_num) %>%
-  summarise(temp_media = mean(temperatura_media, na.rm = TRUE), .groups = "drop") %>%
-  mutate(fecha = as.Date(paste(año, mes_num, "01", sep = "-")))
+# Gráfica de evolución temporal de temperatura
+df_temp_mensual <- Arizona_temp_filtrado %>%
+  group_by(Year, Month) %>%
+  summarise(temp_media = mean(Value, na.rm = TRUE), .groups = "drop") %>%
+  mutate(fecha = as.Date(paste(Year, Month, "01", sep = "-")))
 
 graf_temp_evol <- ggplot(df_temp_mensual, aes(x = fecha, y = temp_media)) +
   geom_line(color = "#3498db", size = 1) +
@@ -254,7 +254,7 @@ arizona_edad_simpl <- arizona_suicidios %>%
   mutate(Pais = "Arizona")
 
 # Hacemos lo mismo para Islandia.
-islandia_edad_simpl <- df_filtered %>%
+islandia_edad_simpl <- suicidios_Islandia %>%
   filter(
     Age != "Total",
     Sex == "Total",
@@ -361,6 +361,7 @@ anim_edad
 
 
 #Ahora vamos a realizar un análisis de correlación entre temperatura media anual y suicidios anuales. Para ver si realmente hay una relación entre ambas variables.
+# Suicidios anuales de Arizona
 arizona_suic_anual <- arizona_suicidios %>%
   filter(Year >= 2018, Year <= 2023,
          !is.na(Deaths)) %>%
@@ -370,13 +371,13 @@ arizona_suic_anual <- arizona_suicidios %>%
     .groups = "drop"
   )
 
-arizona_temp_anual <- df_temp_arizona %>%
-  group_by(año) %>%
+# Temperatura anual de Arizona
+arizona_temp_anual <- Arizona_temp_filtrado %>%
+  group_by(Year) %>%
   summarise(
-    temp_media_anual = mean(temperatura_media, na.rm = TRUE),
+    temp_media_anual = mean(Value, na.rm = TRUE),
     .groups = "drop"
-  ) %>%
-  rename(Year = año)
+  )
 
 #Unimos los dos data frames.
 arizona_temp_suic <- inner_join(arizona_temp_anual,
@@ -408,7 +409,7 @@ cor_arizona <- cor(arizona_temp_suic$temp_media_anual,
 cor_arizona # ver el valor
 
 #Ahora en Islandia:
-islandia_suic_anual <- df_filtered %>%
+islandia_suic_anual <- suicidios_Islandia %>%
   filter(Year >= 2018, Year <= 2023,
          Sex == "Total",        
          !is.na(value)) %>%

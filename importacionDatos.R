@@ -7,14 +7,6 @@ install.packages("rjstat")
 library(rjstat)
 library(stringr)
 
-
-
-# Importacion datos temperatura Arizona .json
-Arizona_temp_json <- fromJSON(file = "INPUT/DATA/Arizona/Temperatura/data.json")
-Arizona_temp_json %>%
-  spread_all() %>%
-  View()
-
 # Importacion .csv datos temperatura Arizona
 Arizona_temp_csv <- read_delim(file="INPUT/DATA/Arizona/Temperatura/data.csv", delim = ",")
 View(Arizona_temp_csv)
@@ -115,14 +107,8 @@ Islandia_suicidio_json <- fromJSONstat("INPUT/DATA/Islandia/Salud/suicidios_isla
 df <- as.data.frame(Islandia_suicidio_json)
 View(df)
 str(df)
-
-<<<<<<< HEAD
-
-df_filtered <- df %>%
-=======
-<<<<<<< HEAD
+  
 suicidios_Islandia <- df %>%
->>>>>>> 92dd293dcf08209ae455c66c89666d4ff6cbf2ea
   mutate(Year = as.numeric(Year)) %>%
   filter(Year >= 2018 & Year <= 2023)
 
@@ -136,11 +122,6 @@ unique(suicidios_Islandia$Year)
 # Contar observaciones por año
 suicidios_Islandia %>%
   count(Year)
-<<<<<<< HEAD
 view(df_filtered)
 
-=======
 view(suicidios_Islandia)
-=======
->>>>>>> c8c57a3c1d9f5f40acb7a111cdc8eca59e0a6027
->>>>>>> 92dd293dcf08209ae455c66c89666d4ff6cbf2ea
