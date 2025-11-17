@@ -122,6 +122,5 @@ unique(suicidios_Islandia$Year)
 # Contar observaciones por año
 suicidios_Islandia %>%
   count(Year)
-view(df_filtered)
 
 view(suicidios_Islandia)
