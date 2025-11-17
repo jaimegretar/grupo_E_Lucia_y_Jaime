@@ -276,3 +276,4 @@ print(graf_comparacion_completa)
 # ============================================================
 # Podria estar bien enfrentar suicidios por edad utilizando arizona_suicidios y suicidios_Islandia
 # Que es donde estan separados los suicidios por edad y sexo
+

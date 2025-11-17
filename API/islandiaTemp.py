@@ -4,7 +4,7 @@ from datetime import datetime, date
 
 BASE = "https://api.vedur.is/weather"
 CITY_HINT = "Reykjav"              # Cambia por "Akureyri" si quieres esa zona
-START = "2018-01-01"               # Puedes ampliar a 2015-01-01 cuando veas cobertura
+START = "1980-01-01"               # Puedes ampliar a 2015-01-01 cuando veas cobertura
 END   = "2023-12-31"
 OUT_PREFIX = "temperatura_reykjavik_2018_2023"
 HEADERS = {"Accept": "application/json"}
