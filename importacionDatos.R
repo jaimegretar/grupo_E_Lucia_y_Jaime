@@ -124,3 +124,42 @@ suicidios_Islandia %>%
   count(Year)
 
 view(suicidios_Islandia)
+
+#------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+
+# Opción 1: Usando read.csv (base R)
+library(tidyverse)
+
+# Primero leer todo como una sola columna
+datos <- read_delim(
+  "INPUT/DATA/Arizona/Salud/Arizona_condado_edad.csv",
+  delim = "\n",  # Leer línea por línea
+  col_names = FALSE,
+  show_col_types = FALSE
+)
+
+# Separar y limpiar
+Arizona <- datos %>%
+  mutate(linea = .[[1]]) %>%
+  separate(linea,
+           into = c("County", "Sex", "Age_Group", "2015", "2016", 
+                    "2017", "2018", "2019", "2020", "2021", "2022", "2023"),
+           sep = ',(?=(?:[^"]*"[^"]*")*[^"]*$)',  # Separar por comas fuera de comillas
+           extra = "merge") %>%
+  mutate(across(everything(), ~str_replace_all(., '"', ''))) %>%  # Quitar comillas
+  select(-1) %>%  # Eliminar la primera columna original
+  slice(-1)  # Eliminar la fila de encabezados si quedó duplicada
+
+# Convertir años a numérico
+Arizona <- Arizona %>%
+  mutate(across(`2015`:`2023`, ~as.numeric(.)))
+
+# Ver resultado
+head(Arizona)
+str(Arizona)
+View(Arizona)
+
+Arizona_2015_2023 <- Arizona %>%
+  mutate(across(`2015`:`2023`, ~replace_na(., 0)))
+View(Arizona_2015_2023)
