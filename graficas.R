@@ -14,8 +14,6 @@ library(gganimate)
 library(gifski)     
 
 #Grafica suicidios en Islandia
-df_clean <- suicidios_Islandia
-
 df_sexo <- suicidios_Islandia %>%
   filter(Age == "Total", Sex != "Total")
 
@@ -84,6 +82,7 @@ graf_temp_islandia <- ggplot(df_resumen, aes(x = as.factor(año), y = temp_media
   )
 
 print(graf_temp_islandia)
+
 #------------------------------------------------------------------------------
 #Grafica suicidios en Arizona por sexo
 arizona_suic_sexo <- arizona_suicidios %>%
@@ -109,6 +108,7 @@ graf_suicHF_ariz <- ggplot(arizona_suic_sexo, aes(x = Year, y = Total_Deaths, co
 
 print(graf_suicHF_ariz)
 
+
 #------------------------------------------------------------------------------
 #Suicidios por grupo de edad en Arizona
 arizona_suic_edad <- arizona_suicidios %>%
@@ -130,6 +130,7 @@ graf_suic_edad_ariz <- ggplot(arizona_suic_edad, aes(x = Year, y = Total_Deaths,
         legend.position = "right")
 
 print(graf_suic_edad_ariz)
+
 #------------------------------------------------------------------------------
 #Grafica de suicidios por region en Arizona
 arizona_region_top <- Arizona_suicidioRegion_csv %>%
@@ -198,25 +199,6 @@ graf_temp_arizona <- ggplot(df_resumen_arizona, aes(x = as.factor(Year), y = tem
   )
 
 print(graf_temp_arizona)
-#------------------------------------------------------------------------------
-# Gráfica de evolución temporal de temperatura
-df_temp_mensual <- Arizona_temp_filtrado %>%
-  group_by(Year, Month) %>%
-  summarise(temp_media = mean(Value, na.rm = TRUE), .groups = "drop") %>%
-  mutate(fecha = as.Date(paste(Year, Month, "01", sep = "-")))
-
-graf_temp_evol <- ggplot(df_temp_mensual, aes(x = fecha, y = temp_media)) +
-  geom_line(color = "#3498db", size = 1) +
-  geom_smooth(method = "loess", color = "#e74c3c", linetype = "dashed", se = FALSE) +
-  labs(title = "Evolución de la Temperatura Media en Arizona",
-       subtitle = "Datos mensuales 2018-2023",
-       x = "Fecha",
-       y = "Temperatura Media (°C)") +
-  theme_minimal(base_size = 12) +
-  theme(plot.title = element_text(face = "bold", size = 16),
-        panel.grid.minor = element_blank())
-
-print(graf_temp_evol)
 
 #------------------------------------------------------------------------------
 #15-11-2025
@@ -258,7 +240,7 @@ islandia_edad_simpl <- suicidios_Islandia %>%
   filter(
     Age != "Total",
     Sex == "Total",
-    Year >= 2018, Year <= 2023,
+    Year >= 1980, Year <= 2023,
     !is.na(value)
   ) %>%
   #creamos la columna de edad de inicio y grupo de edad.
@@ -298,7 +280,7 @@ graf_comp_edad_simpl <- ggplot(
   facet_wrap(~ Pais, scales = "free_y") +   # escala libre por país
   labs(
     title = "Suicidios por Grandes Grupos de Edad",
-    subtitle = "Comparación Arizona vs Islandia (2018–2023)",
+    subtitle = "Comparación Arizona vs Islandia (1980–2023)",
     x = "Año",
     y = "Número de suicidios",
     color = "Grupo de edad"
@@ -410,7 +392,7 @@ cor_arizona # ver el valor
 
 #Ahora en Islandia:
 islandia_suic_anual <- suicidios_Islandia %>%
-  filter(Year >= 2018, Year <= 2023,
+  filter(Year >= 1980, Year <= 2023,
          Sex == "Total",        
          !is.na(value)) %>%
   group_by(Year) %>%
@@ -443,7 +425,7 @@ graf_islandia_temp_suic <- ggplot(islandia_temp_suic,
   geom_smooth(method = "lm", se = FALSE) +
   labs(
     title = "Islandia: Suicidios vs Temperatura media anual",
-    subtitle = "2018–2023",
+    subtitle = "1980–2023",
     x = "Temperatura media anual (°C)",
     y = "Número de suicidios"
   ) +
@@ -454,7 +436,7 @@ print(graf_islandia_temp_suic)
 cor_islandia <- cor(islandia_temp_suic$temp_media_anual,
                     islandia_temp_suic$suicidios_totales,
                     use = "complete.obs") # complete.obs lo ponemos para evitar NAs
-cor_islandia # da un valor negativo.
+cor_islandia # da un valor positivo pero muy bajo.
 
 
 
