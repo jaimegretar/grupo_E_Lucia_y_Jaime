@@ -124,3 +124,4 @@ suicidios_Islandia %>%
   count(Year)
 
 view(suicidios_Islandia)
+
