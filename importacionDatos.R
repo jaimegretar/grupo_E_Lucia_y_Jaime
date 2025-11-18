@@ -28,6 +28,15 @@ Islandia_temp_json %>%
   spread_all() %>%
   View()
 
+# Ver el rango de años en temperatura
+range(df_temp_islandia$año, na.rm = TRUE)
+
+# Ver el rango de años en suicidios
+range(suicidios_Islandia$Year, na.rm = TRUE)
+
+# Ver qué años tienes después del join
+range(islandia_temp_suic$Year, na.rm = TRUE)
+
 # Importacion .csv datos suicidios de Arizona (relacionado con salud mental)
 Arizona_suicidioRegion_csv <- read_csv(
   file = "INPUT/DATA/Arizona/Salud/HDPulse_data_export.csv",
@@ -110,7 +119,7 @@ str(df)
   
 suicidios_Islandia <- df %>%
   mutate(Year = as.numeric(Year)) %>%
-  filter(Year >= 1980 & Year <= 2023)
+  filter(Year >= 1981 & Year <= 2023)
 
 # Verificar el resultado
 str(suicidios_Islandia)
