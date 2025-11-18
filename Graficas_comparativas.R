@@ -160,18 +160,49 @@ df_resumen_islandia <- df_temp_islandia %>%
   ) %>%
   rename(Year = año)
 
-# ============================================================
-# GRÁFICOS: TEMPERATURA (línea) vs SUICIDIOS (barras)
-# ============================================================
+# 1. PREPARAR DATOS DE TEMPERATURA (ya lo tienes)
+arizona_temp_anual <- Arizona_temp_filtrado %>%
+  group_by(Year) %>%
+  summarise(temp_media = mean(Value, na.rm = TRUE))
 
-# --- ARIZONA: Temperatura (línea) vs Suicidios (barras) ---
-# Factor de escala para el segundo eje
-factor_escala_az <- max(arizona_temp_suic$Tasa_100k, na.rm = TRUE) / 
+# 2. PREPARAR DATOS DEL CSV 2015-2023
+# Convertir a formato largo
+arizona_condado_largo <- Arizona_2015_2023 %>%
+  pivot_longer(
+    cols = `2015`:`2023`,
+    names_to = "Year",
+    values_to = "Deaths"
+  ) %>%
+  mutate(Year = as.numeric(Year))
+
+# Ver cómo quedó
+View(arizona_condado_largo)
+
+# Calcular totales anuales (suma de todos los condados, sexos y grupos de edad)
+arizona_suic_anual <- arizona_condado_largo %>%
+  group_by(Year) %>%
+  summarise(
+    Total_Deaths = sum(Deaths, na.rm = TRUE)
+  )
+
+# NOTA: Este CSV no tiene población, así que necesitas:
+# Opción A: Buscar datos de población de Arizona por año
+# Opción B: Usar solo el número total de muertes en lugar de tasa
+
+# 3. COMBINAR CON TEMPERATURA
+arizona_temp_suic <- arizona_temp_anual %>%
+  inner_join(arizona_suic_anual, by = "Year") %>%
+  filter(Year >= 2015 & Year <= 2023)
+
+View(arizona_temp_suic)
+
+# 4. GRÁFICO (ajustado para usar Total_Deaths en lugar de Tasa_100k)
+factor_escala_az <- max(arizona_temp_suic$Total_Deaths, na.rm = TRUE) / 
   max(arizona_temp_suic$temp_media, na.rm = TRUE)
 
 graf_temp_suic_arizona <- ggplot(arizona_temp_suic, aes(x = Year)) +
   # Barras de suicidios
-  geom_col(aes(y = Tasa_100k, fill = "Tasa de Suicidios"), 
+  geom_col(aes(y = Total_Deaths, fill = "Total de Muertes"), 
            alpha = 0.6, width = 0.7) +
   # Línea de temperatura
   geom_line(aes(y = temp_media * factor_escala_az, color = "Temperatura"), 
@@ -180,19 +211,19 @@ graf_temp_suic_arizona <- ggplot(arizona_temp_suic, aes(x = Year)) +
              size = 4) +
   # Configuración de ejes
   scale_y_continuous(
-    name = "Tasa de Suicidios por 100,000 hab.",
+    name = "Total de Muertes",
     sec.axis = sec_axis(~ . / factor_escala_az, name = "Temperatura Media (°C)")
   ) +
-  scale_x_continuous(breaks = 2018:2023) +
+  scale_x_continuous(breaks = 2015:2023) +
   scale_fill_manual(
-    values = c("Tasa de Suicidios" = "#e74c3c")
+    values = c("Total de Muertes" = "#e74c3c")
   ) +
   scale_color_manual(
     values = c("Temperatura" = "#f39c12")
   ) +
   labs(
-    title = "Evolución Temperatura vs Tasa de Suicidios",
-    subtitle = "Arizona (2018-2023)",
+    title = "Evolución Temperatura vs Total de Muertes",
+    subtitle = "Arizona (2015-2023)",
     x = "Año",
     fill = "",
     color = ""
@@ -212,33 +243,80 @@ print(graf_temp_suic_arizona)
 
 # --- ISLANDIA: Temperatura (línea) vs Suicidios (barras) ---
 # Factor de escala para el segundo eje
-factor_escala_isl <- max(islandia_temp_suic$Tasa_100k, na.rm = TRUE) / 
+# 1. PREPARAR DATOS DE TEMPERATURA DE ISLANDIA
+# Convertir el JSON a dataframe y calcular temperatura media anual
+# ============================================================
+# GRÁFICO ISLANDIA: Temperatura vs Suicidios
+# ============================================================
+
+# 1. PREPARAR TEMPERATURA ISLANDIA (ya lo tienes hecho)
+df_temp_islandia <- Islandia_temp_json %>%
+  spread_all() %>%
+  select(fecha, temperatura_media) %>%
+  mutate(
+    fecha = as.Date(fecha),
+    temperatura_media = as.numeric(temperatura_media),
+    año = year(fecha),
+    mes_num = month(fecha),
+    estacion = case_when(
+      mes_num %in% c(12, 1, 2) ~ "Invierno",
+      mes_num %in% c(3, 4, 5) ~ "Primavera",
+      mes_num %in% c(6, 7, 8) ~ "Verano",
+      mes_num %in% c(9, 10, 11) ~ "Otoño"
+    )
+  )
+
+islandia_temp_anual <- df_temp_islandia %>%
+  group_by(año) %>%
+  summarise(
+    temp_media = mean(temperatura_media, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  rename(Year = año)
+
+# 2. PREPARAR SUICIDIOS ISLANDIA
+# Ver qué columnas tiene suicidios_Islandia
+str(suicidios_Islandia)
+
+# Preparar datos de suicidios (ajusta los nombres de columnas según lo que tengas)
+islandia_suic_anual <- suicidios_Islandia %>%
+  group_by(Year) %>%
+  summarise(
+    Total_Deaths = sum(value, na.rm = TRUE)  # Ajusta "value" al nombre de tu columna
+  )
+
+# 3. COMBINAR TEMPERATURA Y SUICIDIOS
+islandia_temp_suic <- islandia_temp_anual %>%
+  inner_join(islandia_suic_anual, by = "Year") %>%
+  filter(Year >= 1980 & Year <= 2023)  # Desde 1980
+
+View(islandia_temp_suic)
+
+# 4. GRÁFICO ISLANDIA
+factor_escala_isl <- max(islandia_temp_suic$Total_Deaths, na.rm = TRUE) / 
   max(islandia_temp_suic$temp_media, na.rm = TRUE)
 
 graf_temp_suic_islandia <- ggplot(islandia_temp_suic, aes(x = Year)) +
-  # Barras de suicidios
-  geom_col(aes(y = Tasa_100k, fill = "Tasa de Suicidios"), 
+  geom_col(aes(y = Total_Deaths, fill = "Total de Muertes"), 
            alpha = 0.6, width = 0.7) +
-  # Línea de temperatura
   geom_line(aes(y = temp_media * factor_escala_isl, color = "Temperatura"), 
             linewidth = 1.5) +
   geom_point(aes(y = temp_media * factor_escala_isl, color = "Temperatura"), 
              size = 4) +
-  # Configuración de ejes
   scale_y_continuous(
-    name = "Tasa de Suicidios por 100,000 hab.",
+    name = "Total de Muertes",
     sec.axis = sec_axis(~ . / factor_escala_isl, name = "Temperatura Media (°C)")
   ) +
-  scale_x_continuous(breaks = 2018:2023) +
+  scale_x_continuous(breaks = seq(1980, 2023, by = 5)) +  # Cambiado: desde 1980
   scale_fill_manual(
-    values = c("Tasa de Suicidios" = "#2ecc71")
+    values = c("Total de Muertes" = "#2ecc71")
   ) +
   scale_color_manual(
     values = c("Temperatura" = "#3498db")
   ) +
   labs(
-    title = "Evolución Temperatura vs Tasa de Suicidios",
-    subtitle = "Islandia (2018-2023)",
+    title = "Evolución Temperatura vs Total de Muertes",
+    subtitle = "Islandia (1980-2023)",  # Cambiado el subtítulo
     x = "Año",
     fill = "",
     color = ""

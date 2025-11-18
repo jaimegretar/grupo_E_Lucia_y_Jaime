@@ -28,6 +28,15 @@ Islandia_temp_json %>%
   spread_all() %>%
   View()
 
+# Ver el rango de años en temperatura
+range(df_temp_islandia$año, na.rm = TRUE)
+
+# Ver el rango de años en suicidios
+range(suicidios_Islandia$Year, na.rm = TRUE)
+
+# Ver qué años tienes después del join
+range(islandia_temp_suic$Year, na.rm = TRUE)
+
 # Importacion .csv datos suicidios de Arizona (relacionado con salud mental)
 Arizona_suicidioRegion_csv <- read_csv(
   file = "INPUT/DATA/Arizona/Salud/HDPulse_data_export.csv",
@@ -110,7 +119,7 @@ str(df)
   
 suicidios_Islandia <- df %>%
   mutate(Year = as.numeric(Year)) %>%
-  filter(Year >= 1980 & Year <= 2023)
+  filter(Year >= 1981 & Year <= 2023)
 
 # Verificar el resultado
 str(suicidios_Islandia)
@@ -125,3 +134,44 @@ suicidios_Islandia %>%
 
 view(suicidios_Islandia)
 
+<<<<<<< HEAD
+=======
+#------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+
+# Opción 1: Usando read.csv (base R)
+library(tidyverse)
+
+# Primero leer todo como una sola columna
+datos <- read_delim(
+  "INPUT/DATA/Arizona/Salud/Arizona_condado_edad.csv",
+  delim = "\n",  # Leer línea por línea
+  col_names = FALSE,
+  show_col_types = FALSE
+)
+
+# Separar y limpiar
+Arizona <- datos %>%
+  mutate(linea = .[[1]]) %>%
+  separate(linea,
+           into = c("County", "Sex", "Age_Group", "2015", "2016", 
+                    "2017", "2018", "2019", "2020", "2021", "2022", "2023"),
+           sep = ',(?=(?:[^"]*"[^"]*")*[^"]*$)',  # Separar por comas fuera de comillas
+           extra = "merge") %>%
+  mutate(across(everything(), ~str_replace_all(., '"', ''))) %>%  # Quitar comillas
+  select(-1) %>%  # Eliminar la primera columna original
+  slice(-1)  # Eliminar la fila de encabezados si quedó duplicada
+
+# Convertir años a numérico
+Arizona <- Arizona %>%
+  mutate(across(`2015`:`2023`, ~as.numeric(.)))
+
+# Ver resultado
+head(Arizona)
+str(Arizona)
+View(Arizona)
+
+Arizona_2015_2023 <- Arizona %>%
+  mutate(across(`2015`:`2023`, ~replace_na(., 0)))
+View(Arizona_2015_2023)
+>>>>>>> b76eeef96156e57e035b7db561b200cef8e55bad
