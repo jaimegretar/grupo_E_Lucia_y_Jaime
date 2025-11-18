@@ -221,30 +221,6 @@ Islandia_temp_json %>%
 #### Arizona:
 Importamos los datos de suicidios de Arizona (relacionados con salud mental) desde un archivo CSV. Se especifican los nombres de las columnas y se salta la fila de encabezado que nos genera problemas en la importación.
 ```{r}
-Arizona_suicidioRegion_csv <- read_csv(
-  file = "INPUT/DATA/Arizona/Salud/HDPulse_data_export.csv",
-  col_names = c(
-    "Region",
-    "Codigo_FIPS",
-    "Muertes_100_000",
-    "CI_Inferior",
-    "CI_Superior",
-    "Num_Muertes_Anual",
-    "Tendencia",
-    "Tendencia_Anual",
-    "CI_Inferior_rep",
-    "CI_Superior_rep"
-  ),
-  skip = 1,              # Para saltar la fila de encabezado que da errores
-  trim_ws = TRUE,
-  show_col_types = FALSE
-)
-
-View(Arizona_suicidioRegion_csv)
-```
-Otro archivo .csv para complementar los datos de suicidios de Arizona desde el 2018-2023 (se utilizo la ayuda de la IA para poder importar el archivo correctamente ya que contenia los datos encapsulados con dobles comillas y más caracteres que dificultaban su procesamiento):
-```{r}
-# Importacion suicidios Arizona 2 del 2015 al 2023 por región y rango de edad.
 datos <- read_delim(
   "INPUT/DATA/Arizona/Salud/Arizona_condado_edad.csv",
   delim = "\n",  # Leer línea por línea
@@ -269,14 +245,30 @@ Arizona <- Arizona %>%
   mutate(across(`2015`:`2023`, ~as.numeric(.)))
 
 # Ver resultado
-head(Arizona)
-str(Arizona)
 View(Arizona)
+```
+```
+Otro archivo .csv para complementar los datos de suicidios de Arizona desde el 2018-2023 (se utilizo la ayuda de la IA para poder importar el archivo correctamente ya que contenia los datos encapsulados con dobles comillas y más caracteres que dificultaban su procesamiento):
+```{r}
+# Importacion .csv datos suicidios de Arizona (relacionado con salud mental)
+datos2 <- read.csv("INPUT/DATA/Arizona/Salud/reports-data-export.csv",
+                   header = TRUE,
+                   stringsAsFactors = FALSE)
 
-#Convertir los NA a 0
-Arizona_2015_2023 <- Arizona %>%
-  mutate(across(`2015`:`2023`, ~replace_na(., 0)))
-View(Arizona_2015_2023)
+# Usar una expresión regular más sofisticada para separar respetando las comillas
+datos_separados <- datos2 %>%
+  mutate(linea = .[[1]]) %>%
+  separate(linea,
+           into = c("Intent", "Year", "Age_Group", "Sex", "Deaths", 
+                    "Population", "Crude_Rate", "Age_Adjusted_Rate", 
+                    "Years_Potential_Life_Lost"),
+           sep = ',(?=(?:[^"]*"[^"]*")*[^"]*$)',  # Separar por comas fuera de comillas
+           extra = "merge") %>%
+  mutate(across(everything(), ~str_replace_all(., '"', ''))) %>%  # Quitar comillas
+  select(-1)  # Eliminar la primera columna original
+
+# Ver resultado
+View(datos_separados)
 ```
 #### Islandia:
 Importamos los datos de suicidios de Islandia desde un archivo JSON con formato JSON-stat.
@@ -309,7 +301,14 @@ En el caso de Islandia , los datos ya están filtrados en el archivo JSON, por l
 
 ### 1.3.2. Limpieza y preparación de datos de suicidios
 #### Arizona:
-Filtramos los datos de suicidios de Arizona pero solo del segundo csv ya que el primero es por regiones y no especifica los años.
+Del primer csv eliminamos los NA y los convertimos a 0.
+```{r}
+#Convertir los NA a 0
+Arizona_2015_2023 <- Arizona %>%
+  mutate(across(`2015`:`2023`, ~replace_na(., 0)))
+View(Arizona_2015_2023)
+```
+Filtramos los datos de suicidios de Arizona pero solo del segundo csv ya que el primero es por regiones y ya vienen especificados los años.
 Primeramente hay que convertir los datos a tipo numer ico para poder trabajar con ellos.
 ```{r}
 # Limpieza de datos - convertir a numérico
