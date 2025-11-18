@@ -377,7 +377,7 @@ graf_arizona_temp_suic <- ggplot(arizona_temp_suic,
   labs(
     title = "Arizona: Suicidios vs Temperatura media anual",
     subtitle = "2018–2023",
-    x = "Temperatura media anual (°F)",
+    x = "Temperatura media anual (°C)",
     y = "Número de suicidios"
   ) +
   theme_minimal(base_size = 12)
@@ -437,6 +437,64 @@ cor_islandia <- cor(islandia_temp_suic$temp_media_anual,
                     islandia_temp_suic$suicidios_totales,
                     use = "complete.obs") # complete.obs lo ponemos para evitar NAs
 cor_islandia # da un valor positivo pero muy bajo.
+
+
+#Scatter mejorado con grupos de edad.
+# Unimos la temperatura anual con los suicidios por grupo de edad en Arizona
+arizona_edad_temp <- arizona_edad_simpl %>%
+  inner_join(arizona_temp_anual, by = "Year")
+
+graf_arizona_temp_edad <- ggplot(
+  arizona_edad_temp,
+  aes(x = temp_media_anual,
+      y = Total_Deaths,
+      color = Grupo_edad)
+) +
+  geom_point(size = 3) +
+  geom_smooth(method = "lm", se = FALSE) +  # una recta por cada grupo de edad
+  labs(
+    title = "Arizona: Suicidios vs Temperatura media anual",
+    subtitle = "Por grandes grupos de edad (2018–2023)",
+    x = "Temperatura media anual (°F)",
+    y = "Número de suicidios",
+    color = "Grupo de edad"
+  ) +
+  theme_minimal(base_size = 12)
+
+print(graf_arizona_temp_edad)
+
+
+
+# 1) Unimos suicidios por grupo de edad con la temperatura anual en Islandia
+islandia_edad_temp <- islandia_edad_simpl %>%
+  inner_join(islandia_temp_anual, by = "Year")
+# 2) Scatter plot: suicidios contra temperatura, con una línea por grupo de edad
+graf_islandia_temp_edad <- ggplot(
+  islandia_edad_temp,
+  aes(x = temp_media_anual,
+      y = Total_Deaths,
+      color = Grupo_edad)
+) +
+  geom_point(size = 2) +
+  geom_smooth(method = "lm", se = FALSE) +  
+  labs(
+    title = "Islandia: Suicidios vs Temperatura media anual",
+    subtitle = "Por grandes grupos de edad (1980–2023)",
+    x = "Temperatura media anual (°C)",
+    y = "Número de suicidios",
+    color = "Grupo de edad"
+  ) +
+  theme_minimal(base_size = 12)
+
+print(graf_islandia_temp_edad)
+
+
+
+
+
+
+
+
 
 
 
