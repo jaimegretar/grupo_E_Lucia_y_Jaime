@@ -3,10 +3,10 @@
 library(tidyverse)
 library(rjstat)
 library(jsonlite)
-install.packages("plotly")
+#install.packages("plotly")
 library(plotly)
 library(lubridate)
-#install.packages(c("dplyr", "stringr", "ggplot2", "gganimate", "gifski"))
+install.packages(c("dplyr", "stringr", "ggplot2", "gganimate", "gifski"))
 library(dplyr)      
 library(stringr)    
 library(ggplot2)    
@@ -85,70 +85,95 @@ print(graf_temp_islandia)
 
 #------------------------------------------------------------------------------
 #Grafica suicidios en Arizona por sexo
-arizona_suic_sexo <- arizona_suicidios %>%
-  filter(!is.na(Deaths), !is.na(Year)) %>%
+
+Arizona_l <- Arizona_2015_2023 %>%
+  pivot_longer(
+    cols = `2015`:`2023`,
+    names_to = "Year",
+    values_to = "Deaths"
+  ) %>%
+  mutate(
+    Year = as.numeric(Year),
+    Deaths = as.numeric(Deaths)
+  )
+
+
+arizona_suic_sexo_2015 <- Arizona_l %>%
+  filter(!is.na(Deaths)) %>% 
   group_by(Year, Sex) %>%
   summarise(Total_Deaths = sum(Deaths, na.rm = TRUE))
 
-# Crear gráfico
-graf_suicHF_ariz <- ggplot(arizona_suic_sexo, aes(x = Year, y = Total_Deaths, color = Sex, group = Sex)) +
+graf_suicHF_ariz <- ggplot(arizona_suic_sexo_2015,
+                                aes(x = Year, y = Total_Deaths, color = Sex, group = Sex)) +
   geom_line(size = 1.2) +
   geom_point(size = 2) +
-  scale_color_manual(values = c("Males" = "#3498db", "Females" = "#e74c3c"),
-                     labels = c("Females" = "Mujeres", "Males" = "Hombres")) +
-  labs(title = "Suicidios por Sexo en Arizona",
-       subtitle = "2018-2023",
-       x = "Año",
-       y = "Número de suicidios",
-       color = "Sexo") +
+  scale_color_manual(
+    values = c("Male" = "#3498db", "Female" = "#e74c3c"),
+    labels = c("Female" = "Mujeres", "Male" = "Hombres")
+  ) +
+  labs(
+    title = "Suicidios por Sexo en Arizona",
+    subtitle = "2015–2023",
+    x = "Año",
+    y = "Número de suicidios",
+    color = "Sexo"
+  ) +
   theme_minimal(base_size = 12) +
-  theme(plot.title = element_text(face = "bold", size = 16),
-        panel.grid.minor = element_blank(),
-        legend.position = "top")
+  theme(
+    plot.title = element_text(face = "bold", size = 16),
+    panel.grid.minor = element_blank(),
+    legend.position = "top"
+  )
 
 print(graf_suicHF_ariz)
 
 
 #------------------------------------------------------------------------------
 #Suicidios por grupo de edad en Arizona
-arizona_suic_edad <- arizona_suicidios %>%
-  filter(!is.na(Deaths), !is.na(Year), Age_Group != "Total") %>%
+arizona_suic_edad_2015 <- Arizona_l %>%
+  filter(!is.na(Deaths), Age_Group != "Total") %>%
   group_by(Year, Age_Group) %>%
   summarise(Total_Deaths = sum(Deaths, na.rm = TRUE), .groups = "drop")
 
-graf_suic_edad_ariz <- ggplot(arizona_suic_edad, aes(x = Year, y = Total_Deaths, fill = Age_Group)) +
+graf_suic_edad_ariz<- ggplot(arizona_suic_edad_2015,
+                                   aes(x = Year, y = Total_Deaths, fill = Age_Group)) +
   geom_col(position = "dodge", width = 0.7) +
   scale_fill_brewer(palette = "Set3") +
-  labs(title = "Suicidios por Grupo de Edad en Arizona",
-       subtitle = "2018-2023",
-       x = "Año",
-       y = "Número de suicidios",
-       fill = "Grupo de Edad") +
+  labs(
+    title = "Suicidios por Grupo de Edad en Arizona",
+    subtitle = "2015–2023",
+    x = "Año",
+    y = "Número de suicidios",
+    fill = "Grupo de Edad"
+  ) +
   theme_minimal(base_size = 12) +
-  theme(plot.title = element_text(face = "bold", size = 16),
-        panel.grid.minor = element_blank(),
-        legend.position = "right")
+  theme(
+    plot.title = element_text(face = "bold", size = 16),
+    panel.grid.minor = element_blank(),
+    legend.position = "right"
+  )
 
 print(graf_suic_edad_ariz)
 
 #------------------------------------------------------------------------------
 #Grafica de suicidios por region en Arizona
-arizona_region_top <- Arizona_suicidioRegion_csv %>%
-  filter(!is.na(Muertes_100_000)) %>%
-  arrange(desc(Muertes_100_000)) %>%
-  head(15)  # Top 15 regiones
+top15_all_years <- Arizona_l %>%
+  group_by(Year, County) %>%
+  summarise(Promedio_Deaths = mean(Deaths, na.rm = TRUE), .groups = "drop") %>%
+  group_by(Year) %>%
+  slice_max(Promedio_Deaths, n = 15) %>%
+  ungroup()
 
-graf_region_arizona <- ggplot(arizona_region_top, aes(x = reorder(Region, Muertes_100_000), y = Muertes_100_000)) +
+graf_region_arizona <- ggplot(top15_all_years, aes(x = reorder(County, Promedio_Deaths), y = Promedio_Deaths)) +
   geom_col(fill = "#e74c3c") +
-  geom_errorbar(aes(ymin = CI_Inferior, ymax = CI_Superior), width = 0.2, alpha = 0.6) +
+  facet_wrap(~Year, scales = "free_y") +
   coord_flip() +
-  labs(title = "Tasa de Suicidios por Región en Arizona",
-       subtitle = "Top 15 Regiones con Mayor Tasa",
-       x = "Región",
-       y = "Tasa de Mortalidad por 100,000 habitantes") +
-  theme_minimal(base_size = 12) +
-  theme(plot.title = element_text(face = "bold", size = 16),
-        panel.grid.minor = element_blank())
+  labs(
+    title = "Top 15 Condados de Arizona por Suicidios",
+    x = "Condado",
+    y = "Número promedio de suicidios"
+  ) +
+  theme_minimal()
 
 print(graf_region_arizona)
 
@@ -487,6 +512,18 @@ graf_islandia_temp_edad <- ggplot(
   theme_minimal(base_size = 12)
 
 print(graf_islandia_temp_edad)
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
