@@ -7,15 +7,22 @@ library(ggplot2)
 library(tidyr)
 library(scales)
 library(lubridate)
-install.packages("patchwork")
+#install.packages("patchwork")
 library(patchwork)
 
 # ============================================================
 # PREPARACIÓN DE DATOS ARIZONA
 # ============================================================
 
-arizona_tasas <- arizona_suicidios %>%
-  filter(Year >= 2018 & Year <= 2023) %>%
+arizona_tasas <- Arizona_2015_2023 %>%
+  # Convertir de formato ancho a largo
+  pivot_longer(
+    cols = `2015`:`2023`,
+    names_to = "Year",
+    values_to = "Deaths"
+  ) %>%
+  mutate(Year = as.numeric(Year)) %>%
+  # Sumar todas las muertes por año (todos los condados, sexos y edades)
   group_by(Year) %>%
   summarise(
     Total_Deaths = sum(Deaths, na.rm = TRUE)
@@ -33,7 +40,7 @@ arizona_tasas <- arizona_suicidios %>%
 # Filtrar datos de Islandia (2018-2023)
 suicidios_Islandia <- df %>%
   mutate(Year = as.numeric(Year)) %>%
-  filter(Year >= 2018 & Year <= 2023)
+  filter(Year >= 2015 & Year <= 2023)
 
 islandia_tasas <- suicidios_Islandia %>%
   filter(Age == "Total") %>%  # Solo totales para evitar duplicar
@@ -64,10 +71,10 @@ graf_tasas_comparadas <- ggplot(comparacion_tasas, aes(x = Year, y = Tasa_100k, 
   geom_line(linewidth = 1.2) +
   geom_point(size = 3) +
   geom_text(aes(label = round(Tasa_100k, 1)), vjust = -1, size = 3) +
-  scale_x_continuous(breaks = 2018:2023) +
+  scale_x_continuous(breaks = 2015:2023) +
   labs(
     title = "Tasa de Suicidios por 100,000 Habitantes",
-    subtitle = "Comparación ajustada por población (2018-2023)",
+    subtitle = "Comparación ajustada por población (2015-2023)",
     x = "Año",
     y = "Tasa por 100,000 hab.",
     color = "Región"
