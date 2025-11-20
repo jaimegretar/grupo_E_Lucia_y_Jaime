@@ -3,10 +3,8 @@
 library(tidyverse)
 library(rjstat)
 library(jsonlite)
-#install.packages("plotly")
 library(plotly)
 library(lubridate)
-#install.packages(c("dplyr", "stringr", "ggplot2", "gganimate", "gifski"))
 library(dplyr)      
 library(stringr)    
 library(ggplot2)    
@@ -33,7 +31,7 @@ graf_suicHF_isl <- ggplot(df_sexo, aes(x = Year, y = value, color = Sex, group =
 
 print(graf_suicHF_isl)
 #------------------------------------------------------------------------------
-#Grafica de temperatura de Isalandia:
+#Grafica de temperatura de Islandia:
 df_temp <- Islandia_temp_json %>% 
   spread_all() %>% 
   select(fecha, temperatura_media) %>% 
@@ -168,9 +166,6 @@ graf_temp_arizona <- ggplot(df_resumen_arizona, aes(x = Year, y = temp_media)) +
 print(graf_temp_arizona)
 
 #------------------------------------------------------------------------------
-#15-11-2025
-#------------------------------------------------------------------------------
-#------------------------------------------------csdoifnnsipegfnsperigfpiser g
 
 #Usamos filter para quedarnos con los datos de suicidios entre 2018 y 2023.
 arizona_edad_simpl <- Arizona_2015_2023 %>%
@@ -252,7 +247,7 @@ graf_comp_edad_simpl_1980_2023 <- ggplot(
   facet_wrap(~ Pais, scales = "free_y") +   # escala libre por país
   labs(
     title = "Suicidios por Grandes Grupos de Edad",
-    subtitle = "Comparación Arizona vs Islandia (2015–2023)",
+    subtitle = "Comparación Arizona vs Islandia (1980–2023)",
     x = "Año",
     y = "Número de suicidios",
     color = "Grupo de edad"
@@ -370,7 +365,8 @@ graf_arizona_temp_suic_2015 <- ggplot(
 
 print(graf_arizona_temp_suic_2015)
 
-
+#Si no muestra el grafico hacer esta linea de codigo para reiniciarlo
+dev.off()
 
 
 # Correlación simple que es el coeficiente de correlación de Pearson.
@@ -455,11 +451,41 @@ arizona_edad_csv <- Arizona_2015_2023 %>%
     .groups = "drop"
   )
 
-colnames(arizona_edad_temp_csv)
-
 
 # Scatter plot por grupos de edad
-graf_arizona_temp_edad <- ggplot(
+# Preparar los datos de Arizona desde 2015
+arizona_edad_csv <- Arizona_2015_2023 %>%
+  pivot_longer(
+    cols = `2015`:`2023`,
+    names_to = "Year",
+    values_to = "Deaths"
+  ) %>%
+  mutate(
+    Year = as.numeric(Year),
+    # Sacamos el primer número de Age_Group para definir grupos
+    edad_inicio = as.numeric(str_extract(Age_Group, "\\d+")),
+    Grupo_edad = case_when(
+      edad_inicio < 20 ~ "0-19",
+      edad_inicio < 40 ~ "20-39",
+      edad_inicio < 60 ~ "40-59",
+      TRUE            ~ "60+"
+    )
+  ) %>%
+  filter(!is.na(edad_inicio)) %>%
+  group_by(Year, Grupo_edad) %>%
+  summarise(
+    Total_Deaths = sum(Deaths, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# Unimos con la temperatura anual
+arizona_edad_temp_csv <- arizona_edad_csv %>%
+  inner_join(arizona_temp_anual, by = "Year")
+
+colnames(arizona_edad_temp_csv)
+
+# Scatter plot por grupos de edad
+graf_arizona_temp_edad_csv <- ggplot(
   arizona_edad_temp_csv,
   aes(x = temp_media,
       y = Total_Deaths,
@@ -469,14 +495,15 @@ graf_arizona_temp_edad <- ggplot(
   geom_smooth(method = "lm", se = FALSE) +  # recta de regresión por grupo de edad
   labs(
     title = "Arizona: Suicidios vs Temperatura media anual",
-    subtitle = "Por grandes grupos de edad (2015–2023)",
+    subtitle = "Por grandes grupos de edad (2015–2023, CSV)",
     x = "Temperatura media anual (°C)",
     y = "Número de suicidios",
     color = "Grupo de edad"
   ) +
   theme_minimal(base_size = 12)
 
-print(graf_arizona_temp_edad)
+print(graf_arizona_temp_edad_csv)
+
 
 
 # 1) Unimos suicidios por grupo de edad con la temperatura anual en Islandia
@@ -503,8 +530,7 @@ graf_islandia_temp_edad <- ggplot(
 print(graf_islandia_temp_edad)
 
 
-#Si no muestra el grafico hacer esta linea de codigo para reiniciarlo
-dev.off()
+
 
 
 
