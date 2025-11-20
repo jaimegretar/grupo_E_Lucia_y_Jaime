@@ -2,7 +2,8 @@
 title: "Suicidio y climas extremos"
 author: Jaime Miguel y Lucía Toimil
 date: Sys.Date()
-output: html_document:
+output: 
+  html_document:
     toc: true
     toc_float: true
 editor_options: 
@@ -12,7 +13,9 @@ editor_options:
 
 # INTRODUCCIÓN
 
-**Islandia** se caracteriza por su clima frio y extremo, además de por la escasa cantidad de luz durante gran parte del año. En cambio, **Arizona** tiene un clima cálido y seco, con abundante luz solar la mayor parte del tiempo. Estos dos lugares, con climas tan extremos y distintos, permiten evaluar de manera comparativa como diferentes condiciones climáticas pueden influir en la **salud mental** y en la tasa de **suicidios**.
+**Islandia** se caracteriza por su clima frio y extremo, además de por la escasa cantidad de luz durante gran parte del año.
+En cambio, **Arizona** tiene un clima cálido y seco, con abundante luz solar la mayor parte del tiempo.
+Estos dos lugares, con climas tan extremos y distintos, permiten evaluar de manera comparativa como diferentes condiciones climáticas pueden influir en la **salud mental** y en la tasa de **suicidios**.
 
 # OBJETIVOS
 
@@ -48,7 +51,9 @@ library(dplyr)
 
 ## 1.2. Obtención de datos de temperatura y suicidio (Islandia y Arizona)
 
-Para la obtencion de datos hemos realizado diversas busquedas en bases de datos y consultas a una API. El siguiente código Python define las funciones necesarias para consultar la API de Veðurstofa Íslands (api.vedur.is), buscar la estación por nombre ("Reykjav"), solicitar la temperatura media diaria (t) y guardar el resultado en archivos CSV y JSON. La consulta se ha realizado con ayuda de la IA.
+Para la obtencion de datos hemos realizado diversas busquedas en bases de datos y consultas a una API.
+El siguiente código Python define las funciones necesarias para consultar la API de Veðurstofa Íslands (api.vedur.is), buscar la estación por nombre ("Reykjav"), solicitar la temperatura media diaria (t) y guardar el resultado en archivos CSV y JSON.
+La consulta se ha realizado con ayuda de la IA.
 
 ```{python, eval=FALSE}
 import requests
@@ -57,7 +62,7 @@ from datetime import datetime, date
 
 BASE = "https://api.vedur.is/weather"
 CITY_HINT = "Reykjav"              # Cambia por "Akureyri" si quieres esa zona
-START = "2018-01-01"               # Puedes ampliar a 2015-01-01 cuando veas cobertura
+START = "1980-01-01"               # Puedes ampliar a 2015-01-01 cuando veas cobertura
 END   = "2023-12-31"
 OUT_PREFIX = "temperatura_reykjavik_2018_2023"
 HEADERS = {"Accept": "application/json"}
@@ -213,12 +218,12 @@ Obtenemos los datos de temperatura de Arizona, desde un archivo .csv y desde un 
 # Importacion datos temperatura Arizona .json
 Arizona_temp_json <- fromJSON(file = "INPUT/DATA/Arizona/Temperatura/data.json")
 Arizona_temp_json %>%
-  spread_all() %>%
-  View()
+  spread_all() #%>%
+  #View()
 
 # Importacion .csv datos temperatura Arizona
 Arizona_temp_csv <- read_delim(file="INPUT/DATA/Arizona/Temperatura/data.csv", delim = ",")
-View(Arizona_temp_csv)
+#View(Arizona_temp_csv)
 ```
 
 Aunque disponemos de los datos de temperatura en ambos formatos, optaremos por utilizar el archivo .csv, ya que es más sencillo de manejar y el formato .json nos ha generado problemas.
@@ -231,16 +236,17 @@ Importacion de los datos de temperatura de Islandia (Reikiavik) en .json, en el 
 # Importacion datos temperatura Islandia .json
 Islandia_temp_json <- fromJSON(file = "INPUT/DATA/Islandia/Temperatura/temperatura_reykjavik_2018_2023.json")
 Islandia_temp_json %>%
-  spread_all() %>%
-  View()
+  spread_all() #%>%
+  #View()
 ```
 
 ### 1.2.2. Importacion de datos de suicidios:
-
 #### Arizona:
-
-Importamos los datos de suicidios de Arizona (relacionados con salud mental) desde un archivo CSV. Se especifican los nombres de las columnas y se salta la fila de encabezado que nos genera problemas en la importación.
-
+Importamos los datos de suicidios de Arizona (relacionados con salud mental) desde un archivo CSV.
+Se utilizo la ayuda de la IA para poder importar los archivoa correctamente ya que contenia los datos encapsulados con dobles comillas y más caracteres que dificultaban su procesamiento.
+Importamos primeramente un csv que contiene información sobre suicidios clasificados por rangos de edad, sexo y regiones de Arizona.
+Con `delim = "\n"` indicamos que se lea linea por linea sin separar todavia por comas. `col_names = FALSE` especifica que el archivo no tiene encabezados y `show_col_types = FALSE` evita que se muestre la información de columnas sin leer.
+El resultado es un data frame "datos" de una sola columna donde cada fila es toda una linea del csv.
 ```{r}
 datos <- read_delim(
   "INPUT/DATA/Arizona/Salud/Arizona_condado_edad.csv",
@@ -248,7 +254,18 @@ datos <- read_delim(
   col_names = FALSE,
   show_col_types = FALSE
 )
-
+#View(datos)
+```
+A continuación, con `mutate(linea = .[[1]])` creamos una nueva columna llamada linea que  contiene una copia de toda la primera columna del data frame original, y se toma la primera columna de datos. Obteniendo asi un data frame con 2 columnas: la original y "linea" que tiene la misma información.
+Utilizamos `separate()` para dividir la columna "linea" en varias columnas nuevas:
++ `into =c(...)` define los nombres de las nuevas columnas
++ `sep = ',(?=(?:[^"]*"[^"]*")*[^"]*$)'` se usa para separar las columnas por comas que no esten dentro de las dobles comillas.
++ `extra = "merge"` se ussa para que si hay mas columnas de las esperadas, todo eso se junta en una ultima columna extra para evitar que de error a la hora de ejecutarlo. 
+Luego, con `mutate(across(everything(), ~str_replace_all(., '"', '')))` se aplica la misma función a todas las columnas y elimina las dobles comillas.
+A continuación, con `select(-1)` se elimina la primera columna original del data frame que contenia la linea completa, y con `slice(-1)` se elimina la primera fila que contenia los encabezados del csv y ya no son necesarios. 
+Por último, se convierte todas las columnas de años de tipo texto a numérico con `across(`2015`:`2023`, ~as.numeric(.))`.
+El resultado es un data frame "Arizona" que tiene columnas separadas para cada tipo de dato limpias de dobles comillas.
+```{r}
 # Separar y limpiar
 Arizona <- datos %>%
   mutate(linea = .[[1]]) %>%
@@ -266,17 +283,21 @@ Arizona <- Arizona %>%
   mutate(across(`2015`:`2023`, ~as.numeric(.)))
 
 # Ver resultado
-View(Arizona)
+#View(Arizona)
 ```
-
-Otro archivo .csv para complementar los datos de suicidios de Arizona desde el 2018-2023 (se utilizo la ayuda de la IA para poder importar el archivo correctamente ya que contenia los datos encapsulados con dobles comillas y más caracteres que dificultaban su procesamiento):
-
+Además, se importo otro archivo .csv para complementar los datos de suicidios de Arizona desde el 2018-2023.
+Se importa un csv que contiene datos de suicidios y otras causas de muerte, con `header = TRUE` se indica que la primera fila contiene los nombres de las columnas y con `stringsAsFactors = FALSE` se evita que las columnas de texto se conviertan en factores, se mantienen como strings.
+El resultado sería un data frame "datos2" que contiene en la primera fila los nombres de las columnas y en las demas los datos respectivos al csv.
 ```{r}
 # Importacion .csv datos suicidios de Arizona (relacionado con salud mental)
 datos2 <- read.csv("INPUT/DATA/Arizona/Salud/reports-data-export.csv",
                    header = TRUE,
                    stringsAsFactors = FALSE)
 
+#View(datos2)
+```
+A continuación, se utiliza `mutate(linea = .[[1]]) %>%` y `mutate(across(everything(), ~str_replace_all(., '"', ''))) %>%` al igual que en csv anterior.
+```{r}
 # Usar una expresión regular más sofisticada para separar respetando las comillas
 datos_separados <- datos2 %>%
   mutate(linea = .[[1]]) %>%
@@ -290,24 +311,27 @@ datos_separados <- datos2 %>%
   select(-1)  # Eliminar la primera columna original
 
 # Ver resultado
-View(datos_separados)
+#View(datos_separados)
 ```
-
 #### Islandia:
-
 Importamos los datos de suicidios de Islandia desde un archivo JSON con formato JSON-stat.
-
 ```{r}
 # Importacion .json datos suicidios de Islandia (relacionado con salud mental)
 Islandia_suicidio_json <- fromJSONstat("INPUT/DATA/Islandia/Salud/suicidios_islandia.json")
 df <- as.data.frame(Islandia_suicidio_json)
-View(df)
+#View(df)
 ```
-
 ## 1.3. Limpieza y preparación de datos
-
-Los archivos importados contienen mucha información que no es importante para nuestro seminario. Por lo que, vamos a filtrar todos los archivos para quedarnos unicamente con datos relacionados con suicidios y temperaturas, concretamente entre los años 2018 y 2023. \### 1.3.1. Limpieza y preparación de datos de temperatura \#### Arizona: Filtramos del Arizona_temp_csv los datos de temperatura media entre los años 2018 y 2023, y creamos nuevas columnas para el año, mes y convertimos la temperatura de Fº a Cº.
-
+Los archivos importados contienen mucha información que no es importante para nuestro seminario.
+Por lo que, vamos a filtrar todos los archivos para quedarnos unicamente con datos relacionados con suicidios y temperaturas, concretamente entre los años 2018 y 2023.
+### 1.3.1.
+Limpieza y preparación de datos de temperatura 
+#### Arizona:
+Filtramos del Arizona_temp_csv los datos de temperatura media entre los años 2018 y 2023, y creamos nuevas columnas para el año, mes y convertimos la temperatura de Fº a Cº.
+Los archivos importados contienen mucha información que no es importante para nuestro seminario. Por lo que, vamos a filtrar todos los archivos para quedarnos unicamente con datos relacionados con suicidios y temperaturas, concretamente entre los años 2018 y 2023. 
+### 1.3.1. Limpieza y preparación de datos de temperatura 
+#### Arizona: 
+Filtramos del Arizona_temp_csv los datos de temperatura media entre los años 2018 y 2023, y creamos nuevas columnas para el año, mes y convertimos la temperatura de Fº a Cº.
 ```{r}
 Arizona_temp_filtrado <- Arizona_temp_csv %>%
   filter(Date >= 201801 & Date <= 202312) %>%
@@ -318,28 +342,21 @@ Arizona_temp_filtrado <- Arizona_temp_csv %>%
   ) %>%
   select(Year, Month, Value)
 
-View(Arizona_temp_filtrado)
+#View(Arizona_temp_filtrado)
 ```
-
 #### Islandia:
-
 En el caso de Islandia , los datos ya están filtrados en el archivo JSON, por lo que no es necesario realizar un filtrado adicional.
-
 ### 1.3.2. Limpieza y preparación de datos de suicidios
-
 #### Arizona:
-
 Del primer csv eliminamos los NA y los convertimos a 0.
-
 ```{r}
 #Convertir los NA a 0
 Arizona_2015_2023 <- Arizona %>%
   mutate(across(`2015`:`2023`, ~replace_na(., 0)))
-View(Arizona_2015_2023)
+#View(Arizona_2015_2023)
 ```
-
-Filtramos los datos de suicidios de Arizona pero solo del segundo csv ya que el primero es por regiones y ya vienen especificados los años. Primeramente hay que convertir los datos a tipo numer ico para poder trabajar con ellos.
-
+Filtramos los datos de suicidios de Arizona pero solo del segundo csv ya que el primero es por regiones y ya vienen especificados los años.
+Primeramente hay que convertir los datos a tipo numer ico para poder trabajar con ellos.
 ```{r}
 # Limpieza de datos - convertir a numérico
 arizona_csv <- datos_separados %>%
@@ -353,24 +370,19 @@ arizona_csv <- datos_separados %>%
   )
 
 # Ver resumen
-View(arizona_csv)
+#View(arizona_csv)
 ```
-
 Posteriormente, filtramos solo los suicidios entre los años 2018 y 2023.
-
 ```{r}
 # Filtrar solo suicidios
 arizona_suicidios <- arizona_csv %>%
   filter(Intent == "Suicide")
 
 # Ver el resultado
-View(arizona_suicidios)
+#View(arizona_suicidios)
 ```
-
 #### Islandia:
-
 Filtramos los suicidios en Islandia entre los años 2018 y 2023.
-
 ```{r}
 suicidios_Islandia <- df %>%
   mutate(Year = as.numeric(Year)) %>%
@@ -382,13 +394,20 @@ unique(suicidios_Islandia$Year)
 # Contar observaciones por año
 suicidios_Islandia %>%
   count(Year)
-view(suicidios_Islandia)
+#View(suicidios_Islandia)
 ```
-
 # GRÁFICAS
-
-A continuación se muestran las gráficas obtenidas a partir de los datos importados y filtrados. \## 2.1. Gráficas individuales Primeramente se obtuveron gráficas individuales para cada lugar con respecto a la variación de temperatura y suicidios. \### 2.1.1. Gráficas de suicidios Se generaron gráficas que muestran la tasa de suicidios por año enfrentando hombres (azul) y mujeres (rojo). \#### Arizona:
-
+A continuación se muestran las gráficas obtenidas a partir de los datos importados y filtrados.
+## 2.1.
+Gráficas individuales Primeramente se obtuveron gráficas individuales para cada lugar con respecto a la variación de temperatura y suicidios.
+### 2.1.1.
+Gráficas de suicidios Se generaron gráficas que muestran la tasa de suicidios por año enfrentando hombres (azul) y mujeres (rojo).
+A continuación se muestran las gráficas obtenidas a partir de los datos importados y filtrados. 
+## 2.1. Gráficas individuales 
+Primeramente se obtuveron gráficas individuales para cada lugar con respecto a la variación de temperatura y suicidios. 
+### 2.1.1. Gráficas de suicidios 
+Se generaron gráficas que muestran la tasa de suicidios por año enfrentando hombres (azul) y mujeres (rojo). 
+#### Arizona:
 ```{r}
 arizona_suic_sexo <- arizona_suicidios %>%
   filter(!is.na(Deaths), !is.na(Year)) %>%
@@ -413,9 +432,7 @@ graf_suicHF_ariz <- ggplot(arizona_suic_sexo, aes(x = Year, y = Total_Deaths, co
 
 print(graf_suicHF_ariz)
 ```
-
 #### Islandia:
-
 ```{r}
 df_clean <- suicidios_Islandia
 
@@ -438,11 +455,9 @@ graf_suicHF_isl <- ggplot(df_sexo, aes(x = Year, y = value, color = Sex, group =
 
 print(graf_suicHF_isl)
 ```
-
 ### 2.1.2. Gráficas de temperatura
-
-Se generaron gráficas que muestran la media de las temperaturas (medida en grados Celsius) por sepearandolas por estaciones. \#### Arizona:
-
+Se generaron gráficas que muestran la media de las temperaturas (medida en grados Celsius) por sepearandolas por estaciones.
+#### Arizona:
 ```{r}
 # Gráfica de temperatura en Arizona
 df_temp_arizona <- Arizona_temp_filtrado %>%
@@ -491,9 +506,7 @@ graf_temp_arizona <- ggplot(df_resumen_arizona, aes(x = as.factor(Year), y = tem
 
 print(graf_temp_arizona)
 ```
-
 #### Islandia:
-
 ```{r}
 #Grafica de temperatura de Isalandia:
 df_temp <- Islandia_temp_json %>%
@@ -545,13 +558,10 @@ graf_temp_islandia <- ggplot(df_resumen, aes(x = as.factor(año), y = temp_media
 
 print(graf_temp_islandia)
 ```
-
 ## 2.2. Gráficas combinadas/comparativas
-
 ### 2.2.1. Comparación de Suicidios por Grupos de Edad:
-
-Transformamos los datos de suicidios de Arizona e Islandia para agruparlos en cuatro categorías de edad simplificadas: "0-19", "20-39", "40-59" y "60+". Después, combinamos ambos data frames para generar visualizaciones comparativas.
-
+Transformamos los datos de suicidios de Arizona e Islandia para agruparlos en cuatro categorías de edad simplificadas: "0-19", "20-39", "40-59" y "60+".
+Después, combinamos ambos data frames para generar visualizaciones comparativas.
 ```{r}
 arizona_edad_simpl <- arizona_suicidios %>%
   filter(
@@ -617,10 +627,8 @@ comparacion_edad_simpl <- bind_rows(arizona_edad_simpl, islandia_edad_simpl) %>%
                         levels = c("0-19", "20-39", "40-59", "60+"))
   )
 ```
-
 Generamos una animación para visualizar la evolución anual de los suicidios por grupo de edad, facilitando la comprensión de las tendencias.
-
-```{r}
+```{r, eval=FALSE}
 library(gganimate)
 library(gifski)
 
@@ -667,9 +675,7 @@ anim_edad
 # Para guardar la imagen quitar el hastag, pero esque se me guarda cada vez que ejecuto por eso lo comento.
 # anim_save("suicidios_grupos_edad_Arizona_Islandia.gif", animation = anim_edad)
 ```
-
 A partir de los datos simplificados, generamos un gráfico de líneas para comparar la evolución anual de los suicidios por grupo de edad en Arizona e Islandia.
-
 ```{r}
 # Hacemos el gráfico comparativo de suicidios por grupo de edad en ambos paises.
 graf_comp_edad_simpl <- ggplot(
@@ -696,11 +702,11 @@ graf_comp_edad_simpl <- ggplot(
 
 print(graf_comp_edad_simpl) #grafico de suicidios por grupo de edad en los dos sitios
 ```
-
 ### Analisis de correlacion entre temperatura y suicidios en Arizona e Islandia:
-
-Por último, se explora de forma descriptiva si existe una posible relación lineal entre la temperatura media anual y el número total de suicidios en el periodo 2018–2023. Para ello se calcula, en cada país, la temperatura media anual y el total de suicidios por año, y se representa un diagrama de dispersión con recta de regresión, junto con el coeficiente de correlación de Pearson. \#### Arizona:
-
+Por último, se explora de forma descriptiva si existe una posible relación lineal entre la temperatura media anual y el número total de suicidios en el periodo 2018–2023.
+Para ello se calcula, en cada país, la temperatura media anual y el total de suicidios por año, y se representa un diagrama de dispersión con recta de regresión, junto con el coeficiente de correlación de Pearson.
+Por último, se explora de forma descriptiva si existe una posible relación lineal entre la temperatura media anual y el número total de suicidios en el periodo 2018–2023. Para ello se calcula, en cada país, la temperatura media anual y el total de suicidios por año, y se representa un diagrama de dispersión con recta de regresión, junto con el coeficiente de correlación de Pearson. 
+#### Arizona:
 ```{r}
 # Suicidios totales por año en Arizona
 
@@ -715,13 +721,12 @@ suicidios_totales = sum(Deaths, na.rm = TRUE),
 
 # Temperatura media anual en Arizona (a partir de df_temp_arizona creado antes)
 
-arizona_temp_anual <- df_temp_arizona %>%
-group_by(año) %>%
-summarise(
-temp_media_anual = mean(temperatura_media, na.rm = TRUE),
-.groups = "drop"
-) %>%
-rename(Year = año)
+arizona_temp_anual <- Arizona_temp_filtrado %>%
+  group_by(Year) %>%
+  summarise(
+    temp_media_anual = mean(Value, na.rm = TRUE),
+    .groups = "drop"
+  )
 
 # Unimos temperatura y suicidios
 
@@ -759,8 +764,9 @@ use = "complete.obs"
 )
 cor_arizona
 ```
-
-En Arizona, el coeficiente de correlación de Pearson entre temperatura media anual y número de suicidios es muy cercano a cero, lo que indica que, con los datos disponibles, **no se observa una relación lineal clara** entre ambas variables. \#### Islandia:
+En Arizona, el coeficiente de correlación de Pearson entre temperatura media anual y número de suicidios es muy cercano a cero, lo que indica que, con los datos disponibles, **no se observa una relación lineal clara** entre ambas variables.
+En Arizona, el coeficiente de correlación de Pearson entre temperatura media anual y número de suicidios es muy cercano a cero, lo que indica que, con los datos disponibles, **no se observa una relación lineal clara** entre ambas variables. 
+#### Islandia:
 
 ```{r}
 # Suicidios totales por año en Islandia (usando suicidios_Islandia)
@@ -821,5 +827,4 @@ use = "complete.obs"
 )
 cor_islandia
 ```
-
 En Islandia el coeficiente de correlación también es bajo y no significativo y, además, es negativo, por lo que, al igual que en Arizona, no se evidencia una relación lineal fuerte entre temperatura media anual y número de suicidios en el periodo 2018–2023.

@@ -3,10 +3,14 @@ library(dplyr)
 library(tidyverse)
 library(rjson)
 library(tidyjson)
-#install.packages("rjstat")
 library(rjstat)
 library(stringr)
 
+#==============================================================================
+#Datos TEMPERATURA  ---------------------------------------------------------
+#==============================================================================
+
+#ARIZONA-----------------------------------------------------------------------
 # Importacion .csv datos temperatura Arizona
 Arizona_temp_csv <- read_delim(file="INPUT/DATA/Arizona/Temperatura/data.csv", delim = ",")
 View(Arizona_temp_csv)
@@ -22,7 +26,9 @@ Arizona_temp_filtrado <- Arizona_temp_csv %>%
 
 View(Arizona_temp_filtrado)
 
-# Importacion datos temperatura Arizona .json
+
+#ISLANDIA----------------------------------------------------------------------
+# Importacion datos temperatura Islandia .json
 Islandia_temp_json <- fromJSON(file = "INPUT/DATA/Islandia/Temperatura/temperatura_reykjavik_1980_2023.json")
 Islandia_temp_json %>%
   spread_all() %>%
@@ -31,39 +37,19 @@ Islandia_temp_json %>%
 # Ver el rango de años en temperatura
 range(Islandia_temp_json$año, na.rm = TRUE)
 
-# Ver el rango de años en suicidios
-range(suicidios_Islandia$Year, na.rm = TRUE)
 
-# Ver qué años tienes después del join
-range(islandia_temp_suic$Year, na.rm = TRUE)
+#==============================================================================
+#Datos SUICIDIOS
+#==============================================================================
 
-# Importacion .csv datos suicidios de Arizona (relacionado con salud mental)
-Arizona_suicidioRegion_csv <- read_csv(
-  file = "INPUT/DATA/Arizona/Salud/HDPulse_data_export.csv",
-  col_names = c(
-    "Region",
-    "Codigo_FIPS",
-    "Muertes_100_000",
-    "CI_Inferior",
-    "CI_Superior",
-    "Num_Muertes_Anual",
-    "Tendencia",
-    "Tendencia_Anual",
-    "CI_Inferior_rep",
-    "CI_Superior_rep"
-  ),
-  skip = 1,              # Saltar la fila de encabezado defectuosa
-  trim_ws = TRUE,
-  show_col_types = FALSE
-)
+#ARIZONA-----------------------------------------------------------------------
 
-View(Arizona_suicidioRegion_csv)
-
-#Importacion suicidios Arizona 2 del 2018 al 2023
-# Leer el archivo nuevamente
+#1.Importacion suicidios Arizona del 2018 al 2023..............................
 datos2 <- read.csv("INPUT/DATA/Arizona/Salud/reports-data-export.csv",
                    header = TRUE,
                    stringsAsFactors = FALSE)
+
+View(datos2)
 
 # Usar una expresión regular más sofisticada para separar respetando las comillas
 datos_separados <- datos2 %>%
@@ -78,8 +64,6 @@ datos_separados <- datos2 %>%
   select(-1)  # Eliminar la primera columna original
 
 # Ver resultado
-head(datos_separados)
-str(datos_separados)
 View(datos_separados)
 
 # Limpieza de datos - convertir a numérico
@@ -93,9 +77,7 @@ arizona_csv <- datos_separados %>%
     Years_Potential_Life_Lost = as.numeric(gsub(",", "", Years_Potential_Life_Lost))
   )
 
-# Ver resumen
-summary(arizona_csv)
-head(arizona_csv)
+# Ver resultado
 View(arizona_csv)
 
 # Filtrar solo suicidios
@@ -105,42 +87,7 @@ arizona_suicidios <- arizona_csv %>%
 # Ver el resultado
 View(arizona_suicidios)
 
-# Ver cuántos registros hay
-nrow(arizona_suicidios)
-
-# Ver resumen de los suicidios
-summary(arizona_suicidios)
-
-# Importacion .json datos suicidios de Islandia (relacionado con salud mental)
-Islandia_suicidio_json <- fromJSONstat("INPUT/DATA/Islandia/Salud/suicidios_islandia.json")
-df <- as.data.frame(Islandia_suicidio_json)
-View(df)
-str(df)
-  
-suicidios_Islandia <- df %>%
-  mutate(Year = as.numeric(Year)) %>%
-  filter(Year >= 1981 & Year <= 2023)
-
-# Verificar el resultado
-str(suicidios_Islandia)
-summary(suicidios_Islandia$Year)
-
-# Ver años únicos
-unique(suicidios_Islandia$Year)
-
-# Contar observaciones por año
-suicidios_Islandia %>%
-  count(Year)
-
-view(suicidios_Islandia)
-
-
-#------------------------------------------------------------------------------
-#------------------------------------------------------------------------------
-
-# Opción 1: Usando read.csv (base R)
-library(tidyverse)
-
+#2.Importacion suicidios Arizona del 2015 al 2023...............................
 # Primero leer todo como una sola columna
 datos <- read_delim(
   "INPUT/DATA/Arizona/Salud/Arizona_condado_edad.csv",
@@ -148,6 +95,8 @@ datos <- read_delim(
   col_names = FALSE,
   show_col_types = FALSE
 )
+
+View(datos)
 
 # Separar y limpiar
 Arizona <- datos %>%
@@ -173,3 +122,21 @@ View(Arizona)
 Arizona_2015_2023 <- Arizona %>%
   mutate(across(`2015`:`2023`, ~replace_na(., 0)))
 View(Arizona_2015_2023)
+
+
+#ISLANDIA----------------------------------------------------------------------
+# Importacion .json datos suicidios de Islandia (relacionado con salud mental)
+Islandia_suicidio_json <- fromJSONstat("INPUT/DATA/Islandia/Salud/suicidios_islandia.json")
+df <- as.data.frame(Islandia_suicidio_json)
+View(df)
+  
+suicidios_Islandia <- df %>%
+  mutate(Year = as.numeric(Year)) %>%
+  filter(Year >= 1981 & Year <= 2023)
+
+# Contar observaciones por año
+suicidios_Islandia %>%
+  count(Year)
+
+view(suicidios_Islandia)
+
