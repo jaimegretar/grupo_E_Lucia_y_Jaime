@@ -139,4 +139,66 @@ suicidios_Islandia %>%
   count(Year)
 
 view(suicidios_Islandia)
+#DATOS DEL PIB per capita----------------------------------------------------------------------
+#Islandia:
+pib_islandia <- read.csv("INPUT/DATA/Islandia/pib/pib_islandia.csv",
+                   header = TRUE,
+                   stringsAsFactors = FALSE)
+view(pib_islandia)
+#Arizona:
+pib_arizona <- read.csv("INPUT/DATA/Arizona/pib/pib_arizona.csv",
+                         header = TRUE,
+                         stringsAsFactors = FALSE)
+view(pib_arizona)
+
+#Join-----------------
+#Arizona.
+Arizona_temp_anual <- Arizona_temp_filtrado %>%
+  filter(Year >= 2000) %>%                 
+  group_by(Year) %>%
+  summarise(
+    temp_media_anual = mean(Value, na.rm = TRUE),
+  )
+view(Arizona_temp_anual)
+
+Arizona_temp_pib_anual <- Arizona_temp_anual %>%
+  left_join(pib_arizona, by = c("Year" = "year")) %>%
+  arrange(Year)
+
+View(Arizona_temp_pib_anual)
+
+#Islandia
+islandia_1981 <- islandia_temp_anual %>%
+  filter(Year>=1981)
+
+islandia_temp_pib_anual <- islandia_1981 %>%
+  left_join(pib_islandia, by = c("Year" = "year")) %>%
+  arrange(Year)
+view(islandia_temp_pib_anual)
+
+#Graficos de visualizacion con PIB:
+ggplot(Arizona_temp_pib_anual, aes(x = Year)) +
+  geom_col(aes(y = pib_per_capita / 1000),
+           alpha = 0.6) +
+  geom_line(aes(y = temp_media_anual / 2),
+            linewidth = 1.1,
+            color = "red") +
+  geom_point(aes(y = temp_media_anual / 2),
+             color = "red") +
+  scale_y_continuous(
+    name = "PIB per cápita (miles de €)",
+    sec.axis = sec_axis(~ . * 2,
+                        name = "Temperatura media anual (°C)")
+  ) +
+  labs(
+    title = "Arizona: PIB per cápita y temperatura media anual",
+    x = "Año"
+  ) +
+  theme_minimal()
+
+
+
+
+
+
 

@@ -290,15 +290,54 @@ print(graf_comp_edad_simpl_2015_2023)
 
 
 # Animacion  ---------------------------------------------------------
-#Realizamos la animación con gganimate. Si no entiendes algo en el video explica : https://youtu.be/pnSMtc1PH_w?si=EmseR8NhhXK7Yrkm
+#Poner el texto de no hay datos:
+# Años del dataset
+years_all <- sort(unique(comparacion_edad_simpl$Year))
+# Años con datos de Arizona
+years_arizona <- sort(unique(
+  comparacion_edad_simpl$Year[comparacion_edad_simpl$Pais == "Arizona"]
+))
+# Años sin datos de Arizona (pero con Islandia)
+years_no_data_arizona <- setdiff(years_all, years_arizona)
+
+niveles_edad <- levels(factor(comparacion_edad_simpl$Grupo_edad))
+x_centro <- niveles_edad[ceiling(length(niveles_edad) / 2)]
+
+max_arizona <- comparacion_edad_simpl %>%
+  filter(Pais == "Arizona") %>%
+  summarise(maxT = max(Total_Deaths, na.rm = TRUE)) %>%
+  pull(maxT)
+
+no_data_df <- data.frame(
+  Pais  = "Arizona",
+  Year  = years_no_data_arizona,
+  x_lab = x_centro,
+  y_pos = max_arizona / 2,
+  label = "No hay datos"
+)
+
+
+library(ggplot2)
+library(gganimate)
+
 p_anim_edad <- ggplot(
   comparacion_edad_simpl,
   aes(x = Grupo_edad,
       y = Total_Deaths,
       fill = Grupo_edad)
 ) +
+  #Para podeer colocarlo para que se vea bien.
   geom_col(width = 0.7) +
-  facet_wrap(~ Pais, scales = "free_y") +   # free_y para que cada país tenga su propia escala y se vea mejor
+  geom_text(
+    data = no_data_df,
+    aes(x = x_lab, y = y_pos, label = label),
+    inherit.aes = FALSE,
+    size = 8,         
+    fontface = "bold",
+    hjust = 0.5,
+    vjust = 0.5
+  ) +
+  facet_wrap(~ Pais, scales = "free_y") +
   labs(
     title = "Suicidios por grupos de edad",
     subtitle = "Año: {closest_state}",
@@ -318,19 +357,17 @@ p_anim_edad <- ggplot(
     state_length = 1
   ) +
   ease_aes("linear")
-
-# Generamos la animacion. Laa he bajado la velocidad que al tener solo 5 años iba muy rapido.
+#Para cambiar la velocidad y otros ajustes.
 anim_edad <- animate(
   p_anim_edad,
-  nframes = 120,
-  fps = 6,
+  nframes = 200,   
+  fps =5 ,         
   width = 900,
   height = 500,
   renderer = gifski_renderer()
 )
 
 anim_edad
-# Pa guardar la imagen quitar el hastag, pero esque se me guarda cada vez que ejecuto por eso lo comento.
 anim_save("suicidios_grupos_edad_Arizona_Islandia.gif", animation = anim_edad)
 
 
