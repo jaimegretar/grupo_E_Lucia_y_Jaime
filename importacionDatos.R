@@ -7,7 +7,7 @@ library(rjstat)
 library(stringr)
 
 #==============================================================================
-#Datos TEMPERATURA  ---------------------------------------------------------
+#Datos TEMPERATURA
 #==============================================================================
 
 #ARIZONA-----------------------------------------------------------------------
@@ -115,8 +115,6 @@ Arizona <- Arizona %>%
   mutate(across(`2015`:`2023`, ~as.numeric(.)))
 
 # Ver resultado
-head(Arizona)
-str(Arizona)
 View(Arizona)
 
 Arizona_2015_2023 <- Arizona %>%
@@ -139,20 +137,28 @@ suicidios_Islandia %>%
   count(Year)
 
 view(suicidios_Islandia)
-#DATOS DEL PIB per capita----------------------------------------------------------------------
-#Islandia:
+
+
+#==============================================================================
+#DATOS DEL PIB per capita
+#==============================================================================
+#ARIZONA-----------------------------------------------------------------------
+pib_arizona <- read.csv("INPUT/DATA/Arizona/pib/pib_arizona.csv",
+                        header = TRUE,
+                        stringsAsFactors = FALSE)
+view(pib_arizona)
+
+#ISLANDIA----------------------------------------------------------------------
 pib_islandia <- read.csv("INPUT/DATA/Islandia/pib/pib_islandia.csv",
                    header = TRUE,
                    stringsAsFactors = FALSE)
 view(pib_islandia)
-#Arizona:
-pib_arizona <- read.csv("INPUT/DATA/Arizona/pib/pib_arizona.csv",
-                         header = TRUE,
-                         stringsAsFactors = FALSE)
-view(pib_arizona)
 
-#Join-----------------
-#Arizona.
+
+#==============================================================================
+#JOIN
+#==============================================================================
+#ARIZONA-----------------------------------------------------------------------
 Arizona_temp_anual <- Arizona_temp_filtrado %>%
   filter(Year >= 2000) %>%                 
   group_by(Year) %>%
@@ -167,7 +173,7 @@ Arizona_temp_pib_anual <- Arizona_temp_anual %>%
 
 View(Arizona_temp_pib_anual)
 
-#Islandia
+#ISLANDIA ---------------------------------------------------------------------
 islandia_1981 <- islandia_temp_anual %>%
   filter(Year>=1981)
 
@@ -178,27 +184,20 @@ view(islandia_temp_pib_anual)
 
 #Graficos de visualizacion con PIB:
 ggplot(Arizona_temp_pib_anual, aes(x = Year)) +
-  geom_col(aes(y = pib_per_capita / 1000),
-           alpha = 0.6) +
-  geom_line(aes(y = temp_media_anual / 2),
-            linewidth = 1.1,
-            color = "red") +
-  geom_point(aes(y = temp_media_anual / 2),
-             color = "red") +
+  geom_col(aes(y = pib_per_capita / 1000, fill = "PIB per cápita"), alpha = 0.6) +
+  geom_line(aes(y = temp_media_anual / 2, color = "Temperatura media anual"), linewidth = 1.1) +
+  geom_point(aes(y = temp_media_anual / 2, color = "Temperatura media anual")) +
   scale_y_continuous(
     name = "PIB per cápita (miles de €)",
-    sec.axis = sec_axis(~ . * 2,
-                        name = "Temperatura media anual (°C)")
+    sec.axis = sec_axis(~ . * 2, name = "Temperatura media anual (°C)")
   ) +
+  scale_fill_manual(name = "", values = c("PIB per cápita" = "steelblue")) +
+  scale_color_manual(name = "", values = c("Temperatura media anual" = "red")) +
   labs(
     title = "Arizona: PIB per cápita y temperatura media anual",
     x = "Año"
   ) +
-  theme_minimal()
-
-
-
-
-
+  theme_minimal() +
+  theme(legend.position = "bottom")
 
 
