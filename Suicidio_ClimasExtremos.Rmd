@@ -312,10 +312,16 @@ df <- as.data.frame(Islandia_suicidio_json)
 
 ## 1.3. Limpieza y preparación de datos
 
+<<<<<<< HEAD
 Los archivos importados contienen mucha información que no es importante para nuestro seminario.
 Por lo que, vamos a filtrar todos los archivos para quedarnos unicamente con datos relacionados con suicidios y temperaturas, concretamente entre los años 2018 y 2023.
 ### 1.3.1.
 Limpieza y preparación de datos de temperatura \#### Arizona: Filtramos del Arizona_temp_csv los datos de temperatura media entre los años 2018 y 2023, y creamos nuevas columnas para el año, mes y convertimos la temperatura de Fº a Cº.
+=======
+Los archivos importados contienen mucha información que no es importante para nuestro seminario. Por lo que, vamos a filtrar todos los archivos para quedarnos unicamente con datos relacionados con suicidios y temperaturas, concretamente entre los años 2018 y 2023. 
+### 1.3.1. Limpieza y preparación de datos de temperatura 
+#### Arizona: Filtramos del Arizona_temp_csv los datos de temperatura media entre los años 2018 y 2023, y creamos nuevas columnas para el año, mes y convertimos la temperatura de Fº a Cº.
+>>>>>>> cee640599c905ea5f187009dc81785c5b093c354
 
 ```{r}
 Arizona_temp_filtrado <- Arizona_temp_csv %>%
@@ -397,11 +403,19 @@ suicidios_Islandia %>%
 
 # GRÁFICAS
 
+<<<<<<< HEAD
 A continuación se muestran las gráficas obtenidas a partir de los datos importados y filtrados.
 ## 2.1.
 Gráficas individuales Primeramente se obtuveron gráficas individuales para cada lugar con respecto a la variación de temperatura y suicidios.
 ### 2.1.1.
 Gráficas de suicidios Se generaron gráficas que muestran la tasa de suicidios por año enfrentando hombres (azul) y mujeres (rojo).
+=======
+A continuación se muestran las gráficas obtenidas a partir de los datos importados y filtrados. 
+## 2.1. Gráficas individuales 
+Primeramente se obtuveron gráficas individuales para cada lugar con respecto a la variación de temperatura y suicidios. 
+### 2.1.1. Gráficas de suicidios 
+Se generaron gráficas que muestran la tasa de suicidios por año enfrentando hombres (azul) y mujeres (rojo). 
+>>>>>>> cee640599c905ea5f187009dc81785c5b093c354
 #### Arizona:
 
 ```{r}
@@ -716,8 +730,12 @@ print(graf_comp_edad_simpl) #grafico de suicidios por grupo de edad en los dos s
 
 ### Analisis de correlacion entre temperatura y suicidios en Arizona e Islandia:
 
+<<<<<<< HEAD
 Por último, se explora de forma descriptiva si existe una posible relación lineal entre la temperatura media anual y el número total de suicidios en el periodo 2018–2023.
 Para ello se calcula, en cada país, la temperatura media anual y el total de suicidios por año, y se representa un diagrama de dispersión con recta de regresión, junto con el coeficiente de correlación de Pearson.
+=======
+Por último, se explora de forma descriptiva si existe una posible relación lineal entre la temperatura media anual y el número total de suicidios en el periodo 2018–2023. Para ello se calcula, en cada país, la temperatura media anual y el total de suicidios por año, y se representa un diagrama de dispersión con recta de regresión, junto con el coeficiente de correlación de Pearson. 
+>>>>>>> cee640599c905ea5f187009dc81785c5b093c354
 #### Arizona:
 
 ```{r}
@@ -778,7 +796,11 @@ use = "complete.obs"
 cor_arizona
 ```
 
+<<<<<<< HEAD
 En Arizona, el coeficiente de correlación de Pearson entre temperatura media anual y número de suicidios es muy cercano a cero, lo que indica que, con los datos disponibles, **no se observa una relación lineal clara** entre ambas variables.
+=======
+En Arizona, el coeficiente de correlación de Pearson entre temperatura media anual y número de suicidios es muy cercano a cero, lo que indica que, con los datos disponibles, **no se observa una relación lineal clara** entre ambas variables. 
+>>>>>>> cee640599c905ea5f187009dc81785c5b093c354
 #### Islandia:
 
 ```{r}
