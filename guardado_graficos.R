@@ -8,7 +8,6 @@ ggsave(filename="OUTPUT/Figures/graf_comp_edad_simpl.jpeg",plot=graf_comp_edad_s
 ggsave(filename="OUTPUT/Figures/graf_arizona_temp_suic.jpeg",plot=graf_arizona_temp_suic,width=10,height=6,dpi=300,device="jpeg")
 ggsave(filename="OUTPUT/Figures/graf_islandia_temp_suic.jpeg",plot=graf_islandia_temp_suic,width=10,height=6,dpi=300,device="jpeg")
 ggsave(filename="OUTPUT/Figures/graf_tasas_comparadas.jpeg",plot=graf_tasas_comparadas,width=10,height=6,dpi=300,device="jpeg")
-ggsave(filename="OUTPUT/Figures/tabla_resumen_completa.jpeg",plot=tabla_resumen_completa,width=10,height=6,dpi=300,device="jpeg")
 ggsave(filename="OUTPUT/Figures/graf_temp_suic_arizona.jpeg",plot=graf_temp_suic_arizona,width=10,height=6,dpi=300,device="jpeg")
 ggsave(filename="OUTPUT/Figures/graf_temp_suic_islandia.jpeg",plot=graf_temp_suic_islandia,width=10,height=6,dpi=300,device="jpeg")
 ggsave(filename="OUTPUT/Figures/graf_comparacion_completa.jpeg",plot=graf_comparacion_completa,width=10,height=6,dpi=300,device="jpeg")
