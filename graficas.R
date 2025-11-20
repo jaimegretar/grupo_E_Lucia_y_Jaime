@@ -1,4 +1,4 @@
-# Cargar librerías necesarias
+# Cargar librerías necesarias  ---------------------------------------------------------
 library(tidyverse)
 library(rjstat)
 library(jsonlite)
@@ -10,7 +10,7 @@ library(ggplot2)
 library(gganimate)  
 library(gifski)     
 
-#Grafica suicidios en Islandia
+#Grafica suicidios en Islandia  ---------------------------------------------------------
 df_sexo <- suicidios_Islandia %>%
   filter(Age == "Total", Sex != "Total")
 
@@ -29,8 +29,9 @@ graf_suicHF_isl <- ggplot(df_sexo, aes(x = Year, y = value, color = Sex, group =
         legend.position = "top")
 
 print(graf_suicHF_isl)
-#------------------------------------------------------------------------------
-#Grafica de temperatura de Islandia:
+
+
+#Grafica de temperatura de Islandia: ---------------------------------------------------------
 df_temp <- Islandia_temp_json %>% 
   spread_all() %>% 
   select(fecha, temperatura_media) %>% 
@@ -40,7 +41,7 @@ df_temp <- Islandia_temp_json %>%
     año = year(fecha)
   )
 
-# Resumen anual
+# Resumen anual ---------------------------------------------------------
 df_resumen <- df_temp %>% 
   group_by(año) %>% 
   summarise(
@@ -65,8 +66,8 @@ graf_temp_islandia <- ggplot(df_resumen, aes(x = año, y = temp_media)) +
 
 print(graf_temp_islandia)
 
-#------------------------------------------------------------------------------
-#Grafica suicidios en Arizona por sexo
+
+#Grafica suicidios en Arizona por sexo ---------------------------------------------------------
 
 Arizona_l <- Arizona_2015_2023 %>%
   pivot_longer(
@@ -109,8 +110,7 @@ graf_suicHF_ariz <- ggplot(arizona_suic_sexo_2015,
 
 print(graf_suicHF_ariz)
 
-#------------------------------------------------------------------------------
-#Grafica de suicidios por region en Arizona
+#Grafica de suicidios por region en Arizona  ---------------------------------------------------------
 top15_all_years <- Arizona_l %>%
   group_by(Year, County) %>%
   summarise(Promedio_Deaths = mean(Deaths, na.rm = TRUE), .groups = "drop") %>%
@@ -131,14 +131,13 @@ graf_region_arizona <- ggplot(top15_all_years, aes(x = reorder(County, Promedio_
 
 print(graf_region_arizona)
 
-#------------------------------------------------------------------------------
-# Gráfica de temperatura en Arizona
+# Gráfica de temperatura en Arizona  ---------------------------------------------------------
 df_temp_arizona <- Arizona_temp_filtrado %>%
   mutate(
     fecha = as.Date(paste(Year, Month, "01", sep = "-"))
   )
 
-# Resumen anual
+# Resumen anual  ---------------------------------------------------------
 df_resumen_arizona <- df_temp_arizona %>%
   group_by(Year) %>%
   summarise(
@@ -146,7 +145,7 @@ df_resumen_arizona <- df_temp_arizona %>%
     .groups = "drop"
   )
 
-# Gráfico de temperatura
+# Gráfico de temperatura  ---------------------------------------------------------
 graf_temp_arizona <- ggplot(df_resumen_arizona, aes(x = Year, y = temp_media)) +
   geom_line(linewidth = 1.2, color = "#f39c12") +
   geom_point(size = 3, color = "#f39c12") +
@@ -164,7 +163,7 @@ graf_temp_arizona <- ggplot(df_resumen_arizona, aes(x = Year, y = temp_media)) +
 
 print(graf_temp_arizona)
 
-#------------------------------------------------------------------------------
+
 
 #Usamos filter para quedarnos con los datos de suicidios entre 2018 y 2023.
 arizona_edad_simpl <- Arizona_2015_2023 %>%
@@ -264,7 +263,7 @@ print(graf_comp_edad_simpl_1980_2023) #grafico de suicidios por grupo de edad en
 comparacion_edad_simpl_2015_2023 <- comparacion_edad_simpl %>%
   filter(Year >= 2015, Year <= 2023)
 
-# Gráfico comparativo solo 2015–2023
+# Gráfico comparativo solo 2015–2023  ---------------------------------------------------------
 graf_comp_edad_simpl_2015_2023 <- ggplot(
   comparacion_edad_simpl_2015_2023,
   aes(x = Year, y = Total_Deaths,
@@ -290,7 +289,7 @@ graf_comp_edad_simpl_2015_2023 <- ggplot(
 print(graf_comp_edad_simpl_2015_2023)
 
 
-
+# Animacion  ---------------------------------------------------------
 #Realizamos la animación con gganimate. Si no entiendes algo en el video explica : https://youtu.be/pnSMtc1PH_w?si=EmseR8NhhXK7Yrkm
 p_anim_edad <- ggplot(
   comparacion_edad_simpl,
@@ -337,7 +336,7 @@ anim_save("suicidios_grupos_edad_Arizona_Islandia.gif", animation = anim_edad)
 
 
 
-
+# Analisis Estadisitco  ---------------------------------------------------------
 
 #Ahora vamos a realizar un análisis de correlación entre temperatura media anual y suicidios anuales. Para ver si realmente hay una relación entre ambas variables.
 # Suicidios anuales de Arizona desde 2015
