@@ -29,7 +29,7 @@ Islandia_temp_json %>%
   View()
 
 # Ver el rango de años en temperatura
-range(df_temp_islandia$año, na.rm = TRUE)
+range(Islandia_temp_json$año, na.rm = TRUE)
 
 # Ver el rango de años en suicidios
 range(suicidios_Islandia$Year, na.rm = TRUE)
