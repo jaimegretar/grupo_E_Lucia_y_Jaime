@@ -261,6 +261,36 @@ graf_comp_edad_simpl_1980_2023 <- ggplot(
 
 print(graf_comp_edad_simpl_1980_2023) #grafico de suicidios por grupo de edad en los dos sitios
 
+# Filtramos solo los años 2015–2023
+comparacion_edad_simpl_2015_2023 <- comparacion_edad_simpl %>%
+  filter(Year >= 2015, Year <= 2023)
+
+# Gráfico comparativo solo 2015–2023
+graf_comp_edad_simpl_2015_2023 <- ggplot(
+  comparacion_edad_simpl_2015_2023,
+  aes(x = Year, y = Total_Deaths,
+      color = Grupo_edad, group = Grupo_edad)
+) +
+  geom_line(size = 1.2) +
+  geom_point(size = 2) +
+  facet_wrap(~ Pais, scales = "free_y") +
+  labs(
+    title = "Suicidios por Grandes Grupos de Edad",
+    subtitle = "Comparación Arizona vs Islandia (2015–2023)",
+    x = "Año",
+    y = "Número de suicidios",
+    color = "Grupo de edad"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    plot.title = element_text(face = "bold", size = 16),
+    panel.grid.minor = element_blank(),
+    legend.position = "bottom"
+  )
+
+print(graf_comp_edad_simpl_2015_2023)
+
+
 
 #Realizamos la animación con gganimate. Si no entiendes algo en el video explica : https://youtu.be/pnSMtc1PH_w?si=EmseR8NhhXK7Yrkm
 p_anim_edad <- ggplot(
