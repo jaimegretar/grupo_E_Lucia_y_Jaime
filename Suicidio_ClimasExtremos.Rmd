@@ -23,7 +23,7 @@ Estos dos lugares, con climas tan extremos y distintos, permiten evaluar de mane
 
 Analizar la posible relación entre las condiciones climáticas y la salud mental, evaluando como el clima podría influir en la tasa de suicidios en Islandia y Arizona.
 
-# Objetivos especificos
+## Objetivos especificos
 
 -   Comparar la tasa de suicidios en Islandia y Arizona en relación con sus caracteristicas climáticas.
 -   Comparar las tasas de suicidios entre hombres y mujeres en ambos lugares
@@ -204,6 +204,7 @@ df <- as.data.frame(Islandia_suicidio_json)
 
 Además de los datos de temperatura y suicidios, se han incorporado datos de PIB per cápita debido a su fácil accesibilidad y relevancia socioeconómica.
 El objetivo de incluir esta variable es explorar si el nivel de riqueza media por habitante podría estar relacionado, directa o indirectamente, con las variaciones en las tasas de suicidio, y poder visualizarlo con ambos climas tan diferentes.
+
 #### Arizona:
 
 ```{r}
@@ -252,7 +253,12 @@ Arizona_temp_filtrado <- Arizona_temp_csv %>%
 #### Islandia:
 
 En el caso de Islandia , los datos ya están filtrados en el archivo JSON, por lo que no es necesario realizar un filtrado adicional.
-### 1.3.2.Limpieza y preparación de datos de suicidios \#### Arizona: Del primer csv eliminamos los NA y los convertimos a 0.
+
+### 1.3.2.Limpieza y preparación de datos de suicidios
+
+#### Arizona:
+
+Del primer csv eliminamos los NA y los convertimos a 0.
 
 ```{r}
 #Convertir los NA a 0
@@ -308,19 +314,6 @@ suicidios_Islandia %>%
 
 ### 1.3.3.Limpieza y preparación de datos de PIB.
 
-#### Islandia:
-
-Hacemos un left_join con el PIB per cápita usando el año como clave, de forma que en islandia_temp_pib_anual tenemos, para cada año, la temperatura media anual y el PIB per cápita ordenados cronológicamente.
-
-```{r}
-islandia_1981 <- islandia_temp_anual %>%
-  filter(Year>=1981)
-
-islandia_temp_pib_anual <- islandia_1981 %>%
-  left_join(pib_islandia, by = c("Year" = "year")) %>%
-  arrange(Year)
-```
-
 #### Arizona:
 
 Se calcula la temperatura media anual de Arizona desde el año 2000, agrupando por año y promediando la temperatura.
@@ -342,12 +335,111 @@ Arizona_temp_pib_anual <- Arizona_temp_anual %>%
 #View(Arizona_temp_pib_anual)
 ```
 
+#### Islandia:
+
+Hacemos un left_join con el PIB per cápita usando el año como clave, de forma que en islandia_temp_pib_anual tenemos, para cada año, la temperatura media anual y el PIB per cápita ordenados cronológicamente.
+
+```{r}
+islandia_1981 <- islandia_temp_anual %>%
+  filter(Year>=1981)
+
+islandia_temp_pib_anual <- islandia_1981 %>%
+  left_join(pib_islandia, by = c("Year" = "year")) %>%
+  arrange(Year)
+```
+
 # GRÁFICAS
 
 A continuación se muestran las gráficas obtenidas a partir de los datos importados y filtrados.
-## 2.1.
+
+## 2.1. Gráficas individuales
+
 Gráficas individuales Primeramente se obtuveron gráficas individuales para cada lugar con respecto a la variación de temperatura y suicidios.
-### 2.1.1.Gráficas de suicidios.
+
+### 2.1.1. Gráficas de temperatura
+
+Se generaron gráficas que muestran la evolución de la temperatura en ambos lugares.
+El procedimiento ha sigo igual en ambos, se crea un data frame que contenga unicamente la información de la fecha y la temperatura.
+Posteriormente se filtra para obtener un data frame que agrupe la información por años y calcule la media de cada uno de ellos.
+Finalmente se crea el gráfico utilizando este último data frame.
+
+#### Arizona:
+
+```{r}
+# Gráfica de temperatura en Arizona 
+df_temp_arizona <- Arizona_temp_filtrado %>%
+  mutate(
+    fecha = as.Date(paste(Year, Month, "01", sep = "-"))
+  )
+
+# Resumen anual  
+df_resumen_arizona <- df_temp_arizona %>%
+  group_by(Year) %>%
+  summarise(
+    temp_media = mean(Value, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# Gráfico de temperatura  
+graf_temp_arizona <- ggplot(df_resumen_arizona, aes(x = Year, y = temp_media)) +
+  geom_line(linewidth = 1.2, color = "#f39c12") +
+  geom_point(size = 3, color = "#f39c12") +
+  labs(
+    title = "Evolución de la Temperatura Media en Arizona",
+    subtitle = "Arizona 1980-2023",
+    x = "Año",
+    y = "Temperatura Media (°C)"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    plot.title = element_text(face = "bold", size = 16),
+    panel.grid.minor = element_blank()
+  )
+
+print(graf_temp_arizona)
+```
+
+#### Islandia:
+
+```{r}
+#Grafica de temperatura de Islandia: ---------------------------------------------------------
+df_temp <- Islandia_temp_json %>% 
+  spread_all() %>% 
+  select(fecha, temperatura_media) %>% 
+  mutate(
+    fecha = as.Date(fecha),
+    temperatura_media = as.numeric(temperatura_media),
+    año = year(fecha)
+  )
+
+# Resumen anual ---------------------------------------------------------
+df_resumen <- df_temp %>% 
+  group_by(año) %>% 
+  summarise(
+    temp_media = mean(temperatura_media, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+graf_temp_islandia <- ggplot(df_resumen, aes(x = año, y = temp_media)) +
+  geom_line(linewidth = 1.2, color = "#3498db") +
+  geom_point(size = 3, color = "#3498db") +
+  labs(
+    title = "Evolución de la Temperatura Media en Reykjavik",
+    subtitle = "Reykjavik 1980-2023",
+    x = "Año",
+    y = "Temperatura Media (°C)"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    plot.title = element_text(face = "bold", size = 16),
+    panel.grid.minor = element_blank()
+  )
+
+print(graf_temp_islandia)
+```
+
+### 2.1.2.Gráficas de suicidios
+
 Se generaron gráficas que muestran la tasa de suicidios por año enfrentando hombres (azul) y mujeres (rojo).
 
 #### Arizona:
@@ -400,114 +492,6 @@ graf_suicHF_isl <- ggplot(df_sexo, aes(x = Year, y = value, color = Sex, group =
         legend.position = "top")
 
 print(graf_suicHF_isl)
-```
-
-### 2.1.2. Gráficas de temperatura
-
-Se generaron gráficas que muestran la media de las temperaturas (medida en grados Celsius) por sepearandolas por estaciones.
-#### Arizona:
-
-```{r}
-# Gráfica de temperatura en Arizona
-df_temp_arizona <- Arizona_temp_filtrado %>%
-  mutate(
-    # Crear fecha para extraer mes y estación
-    fecha = as.Date(paste(Year, Month, "01", sep = "-")),
-    mes = month(fecha, label = TRUE, abbr = FALSE),
-    estacion = case_when(
-      Month %in% c(12, 1, 2) ~ "Invierno",
-      Month %in% c(3, 4, 5) ~ "Primavera",
-      Month %in% c(6, 7, 8) ~ "Verano",
-      Month %in% c(9, 10, 11) ~ "Otoño"
-    )
-  )
-
-# Resumen por año y estación
-df_resumen_arizona <- df_temp_arizona %>%
-  group_by(Year, estacion) %>%
-  summarise(
-    temp_media = mean(Value, na.rm = TRUE),
-    temp_max = max(Value, na.rm = TRUE),
-    temp_min = min(Value, na.rm = TRUE)
-  ) %>%
-  mutate(estacion = factor(estacion, levels = c("Invierno", "Primavera", "Verano", "Otoño")))
-
-# Gráfico de temperatura
-graf_temp_arizona <- ggplot(df_resumen_arizona, aes(x = as.factor(Year), y = temp_media, fill = estacion)) +
-  geom_col(position = "dodge", width = 0.7) +
-  scale_fill_manual(
-    values = c("Invierno" = "#3498db", "Primavera" = "#2ecc71", 
-               "Verano" = "#f39c12", "Otoño" = "#e67e22")
-  ) +
-  labs(
-    title = "Temperatura Media por Año y Estación",
-    subtitle = "Arizona 2018-2023",
-    x = "Año",
-    y = "Temperatura Media (°C)",
-    fill = "Estación"
-  ) +
-  theme_minimal(base_size = 12) +
-  theme(
-    plot.title = element_text(face = "bold", size = 16),
-    legend.position = "top",
-    panel.grid.minor = element_blank()
-  )
-
-print(graf_temp_arizona)
-```
-
-#### Islandia:
-
-```{r}
-#Grafica de temperatura de Isalandia:
-df_temp <- Islandia_temp_json %>%
-  spread_all() %>%
-  select(fecha, temperatura_media) %>%
-  mutate(
-    fecha = as.Date(fecha),
-    temperatura_media = as.numeric(temperatura_media),
-    año = year(fecha),
-    mes = month(fecha, label = TRUE, abbr = FALSE),
-    mes_num = month(fecha),
-    estacion = case_when(
-      mes_num %in% c(12, 1, 2) ~ "Invierno",
-      mes_num %in% c(3, 4, 5) ~ "Primavera",
-      mes_num %in% c(6, 7, 8) ~ "Verano",
-      mes_num %in% c(9, 10, 11) ~ "Otoño"
-    )
-  )
-
-df_resumen <- df_temp %>%
-  group_by(año, estacion) %>%
-  summarise(
-    temp_media = mean(temperatura_media, na.rm = TRUE),
-    temp_max = max(temperatura_media, na.rm = TRUE),
-    temp_min = min(temperatura_media, na.rm = TRUE),
-    .groups = "drop"
-  ) %>%
-  mutate(estacion = factor(estacion, levels = c("Invierno", "Primavera", "Verano", "Otoño")))
-
-graf_temp_islandia <- ggplot(df_resumen, aes(x = as.factor(año), y = temp_media, fill = estacion)) +
-  geom_col(position = "dodge", width = 0.7) +
-  scale_fill_manual(
-    values = c("Invierno" = "#3498db", "Primavera" = "#2ecc71", 
-               "Verano" = "#f39c12", "Otoño" = "#e67e22")
-  ) +
-  labs(
-    title = "Temperatura Media por Año y Estación",
-    subtitle = "Reykjavik 2018-2023",
-    x = "Año",
-    y = "Temperatura Media (°C)",
-    fill = "Estación"
-  ) +
-  theme_minimal(base_size = 12) +
-  theme(
-    plot.title = element_text(face = "bold", size = 16),
-    legend.position = "top",
-    panel.grid.minor = element_blank()
-  )
-
-print(graf_temp_islandia)
 ```
 
 ## 2.2. Gráficas combinadas/comparativas
@@ -687,9 +671,11 @@ anim_edad
 
 A partir de los datos simplificados, generamos un gráfico de líneas para comparar la evolución anual de los suicidios por grupo de edad en Arizona e Islandia.
 
+#### 1980 - 2023
+
 ```{r}
-# Hacemos el gráfico comparativo de suicidios por grupo de edad en ambos paises.
-graf_comp_edad_simpl <- ggplot(
+# Hacemos el gráfico comparativo de suicidios por grupo de edad en ambos paises desde 1980.
+graf_comp_edad_simpl_1980_2023 <- ggplot(
   comparacion_edad_simpl,
   aes(x = Year, y = Total_Deaths,
       color = Grupo_edad, group = Grupo_edad)
@@ -699,7 +685,7 @@ graf_comp_edad_simpl <- ggplot(
   facet_wrap(~ Pais, scales = "free_y") +   # escala libre por país
   labs(
     title = "Suicidios por Grandes Grupos de Edad",
-    subtitle = "Comparación Arizona vs Islandia (2018–2023)",
+    subtitle = "Comparación Arizona vs Islandia (1980–2023)",
     x = "Año",
     y = "Número de suicidios",
     color = "Grupo de edad"
@@ -711,126 +697,156 @@ graf_comp_edad_simpl <- ggplot(
     legend.position = "bottom"
   )
 
-print(graf_comp_edad_simpl) #grafico de suicidios por grupo de edad en los dos sitios
+print(graf_comp_edad_simpl_1980_2023) #grafico de suicidios por grupo de edad en los dos sitios
 ```
 
-### Analisis de correlacion entre temperatura y suicidios en Arizona e Islandia:
-
-Por último, se explora de forma descriptiva si existe una posible relación lineal entre la temperatura media anual y el número total de suicidios en el periodo 2018–2023.
-Para ello se calcula, en cada país, la temperatura media anual y el total de suicidios por año, y se representa un diagrama de dispersión con recta de regresión, junto con el coeficiente de correlación de Pearson.
-Por último, se explora de forma descriptiva si existe una posible relación lineal entre la temperatura media anual y el número total de suicidios en el periodo 2018–2023.
-Para ello se calcula, en cada país, la temperatura media anual y el total de suicidios por año, y se representa un diagrama de dispersión con recta de regresión, junto con el coeficiente de correlación de Pearson.
-#### Arizona:
+#### 2015 - 2023
 
 ```{r}
-# Suicidios totales por año en Arizona
+# Filtramos solo los años 2015–2023
+comparacion_edad_simpl_2015_2023 <- comparacion_edad_simpl %>%
+  filter(Year >= 2015, Year <= 2023)
 
-arizona_suic_anual <- arizona_suicidios %>%
-filter(Year >= 2018, Year <= 2023,
-!is.na(Deaths)) %>%
-group_by(Year) %>%
-summarise(
-suicidios_totales = sum(Deaths, na.rm = TRUE),
-.groups = "drop"
-)
-
-# Temperatura media anual en Arizona (a partir de df_temp_arizona creado antes)
-
-arizona_temp_anual <- Arizona_temp_filtrado %>%
-  group_by(Year) %>%
-  summarise(
-    temp_media_anual = mean(Value, na.rm = TRUE),
-    .groups = "drop"
+# Gráfico comparativo solo 2015–2023  ---------------------------------------------------------
+graf_comp_edad_simpl_2015_2023 <- ggplot(
+  comparacion_edad_simpl_2015_2023,
+  aes(x = Year, y = Total_Deaths,
+      color = Grupo_edad, group = Grupo_edad)
+) +
+  geom_line(size = 1.2) +
+  geom_point(size = 2) +
+  facet_wrap(~ Pais, scales = "free_y") +
+  labs(
+    title = "Suicidios por Grandes Grupos de Edad",
+    subtitle = "Comparación Arizona vs Islandia (2015–2023)",
+    x = "Año",
+    y = "Número de suicidios",
+    color = "Grupo de edad"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    plot.title = element_text(face = "bold", size = 16),
+    panel.grid.minor = element_blank(),
+    legend.position = "bottom"
   )
 
-# Unimos temperatura y suicidios
+print(graf_comp_edad_simpl_2015_2023)
+```
 
-arizona_temp_suic <- inner_join(
-arizona_temp_anual,
-arizona_suic_anual,
-by = "Year"
+### 2.2.3. Analisis de correlacion entre temperatura y suicidios en Arizona e Islandia:
+
+Por último, se explora de forma descriptiva si existe una posible relación lineal entre la temperatura media anual y el número total de suicidios en el periodo 2018–2023.
+Para ello se calcula, en cada país, la temperatura media anual y el total de suicidios por año, y se representa un diagrama de dispersión con recta de regresión, junto con el coeficiente de correlación de Pearson.
+Por último, se explora de forma descriptiva si existe una posible relación lineal entre la temperatura media anual y el número total de suicidios en el periodo 2018–2023.
+Para ello se calcula, en cada país, la temperatura media anual y el total de suicidios por año, y se representa un diagrama de dispersión con recta de regresión, junto con el coeficiente de correlación de Pearson.
+
+#### Arizona:
+
+##### Total:
+
+```{r}
+# --- Datos anuales ya existentes ---
+suicidios <- arizona_suic_anual_2015 %>% 
+  filter(Year >= 2015, Year <= 2023)
+
+temperaturas <- arizona_temp_anual %>%
+  filter(Year >= 2015, Year <= 2023)
+
+# --- Unión ---
+arizona_temp_suic_2015 <- inner_join(
+  temperaturas,
+  suicidios,
+  by = "Year"
 )
 
-arizona_temp_suic
+colnames(arizona_temp_suic_2015)
 
-# Diagrama de dispersión con recta de regresión
+# --- Scatter ---
+graf_arizona_temp_suic_2015 <- ggplot(arizona_temp_suic_2015,
+       aes(x = temp_media_anual, y = suicidios_totales)) +
+  geom_point(size = 4, color = "steelblue") +
+  geom_smooth(method = "lm", se = FALSE, color = "black", linewidth = 1.2) +
+  labs(
+    title = "Arizona: Suicidios anuales vs Temperatura media anual",
+    subtitle = "(2015–2023)",
+    x = "Temperatura media anual (°C)",
+    y = "Número total de suicidios"
+  ) +
+  theme_minimal(base_size = 12)
 
-graf_arizona_temp_suic <- ggplot(arizona_temp_suic,
-aes(x = temp_media_anual,
-y = suicidios_totales)) +
-geom_point(size = 3) +
-geom_smooth(method = "lm", se = FALSE) +
-labs(
-title = "Arizona: suicidios vs temperatura media anual",
-subtitle = "2018–2023",
-x = "Temperatura media anual (°F)",
-y = "Número de suicidios"
-) +
-theme_minimal(base_size = 12)
+print(graf_arizona_temp_suic_2015)
 
-print(graf_arizona_temp_suic)
-
-# Coeficiente de correlación de Pearson
-
-cor_arizona <- cor(
-arizona_temp_suic$temp_media_anual,
-arizona_temp_suic$suicidios_totales,
-use = "complete.obs"
-)
-cor_arizona
+# Correlación simple que es el coeficiente de correlación de Pearson.
+cor_arizona <- cor(arizona_temp_suic$temp_media_anual,
+                   arizona_temp_suic$suicidios_totales,
+                   use = "complete.obs") # complete.obs lo ponemos para evitar NAs
+cor_arizona # ver el valor
 ```
 
 En Arizona, el coeficiente de correlación de Pearson entre temperatura media anual y número de suicidios es muy cercano a cero, lo que indica que, con los datos disponibles, **no se observa una relación lineal clara** entre ambas variables.
 En Arizona, el coeficiente de correlación de Pearson entre temperatura media anual y número de suicidios es muy cercano a cero, lo que indica que, con los datos disponibles, **no se observa una relación lineal clara** entre ambas variables.
-#### Islandia:
+
+##### Por grupos de edad:
 
 ```{r}
-# Suicidios totales por año en Islandia (usando suicidios_Islandia)
+# Unimos la temperatura anual con los suicidios por grupo de edad en Arizona
+arizona_edad_temp_csv <- arizona_edad_simpl %>%
+  inner_join(arizona_temp_anual, by = "Year")
 
-islandia_suic_anual <- suicidios_Islandia %>%
-filter(Year >= 2018, Year <= 2023,
-Sex == "Total",
-!is.na(value)) %>%
-group_by(Year) %>%
-summarise(
-suicidios_totales = sum(value, na.rm = TRUE),
-.groups = "drop"
-)
-
-# Temperatura media anual en Islandia (a partir de df_temp creado antes)
-
-islandia_temp_anual <- df_temp %>%
-group_by(año) %>%
-summarise(
-temp_media_anual = mean(temperatura_media, na.rm = TRUE),
-.groups = "drop"
-) %>%
-rename(Year = año)
-
-# Unimos temperatura y suicidios
-
-islandia_temp_suic <- inner_join(
-islandia_temp_anual,
-islandia_suic_anual,
-by = "Year"
-)
-
-islandia_temp_suic
-
-# Diagrama de dispersión con recta de regresión
-
-graf_islandia_temp_suic <- ggplot(islandia_temp_suic,
-aes(x = temp_media_anual,
-y = suicidios_totales)) +
-geom_point(size = 3) +
-geom_smooth(method = "lm", se = FALSE) +
-labs(
-title = "Islandia: suicidios vs temperatura media anual",
-subtitle = "2018–2023",
-x = "Temperatura media anual (°C)",
-y = "Número de suicidios"
+#Creamos gráfico
+graf_arizona_temp_edad_csv <- ggplot(
+  arizona_edad_temp_csv,
+  aes(x = temp_media_anual,
+      y = Total_Deaths,
+      color = Grupo_edad)
 ) +
-theme_minimal(base_size = 12)
+  geom_point(size = 3) +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(
+    title = "Arizona: Suicidios vs Temperatura media anual",
+    subtitle = "Por grandes grupos de edad (2015–2023, CSV)",
+    x = "Temperatura media anual (°C)",
+    y = "Número de suicidios",
+    color = "Grupo de edad"
+  ) +
+  theme_minimal(base_size = 12)
+
+print(graf_arizona_temp_edad_csv)
+```
+
+#### Islandia:
+
+##### Total:
+
+```{r}
+# --- Datos anuales ya existentes ---
+suicidios_Isl <- islandia_suic_anual %>% 
+  filter(Year >= 1980, Year <= 2023)
+
+temperaturas_Isl <- islandia_temp_anual %>%
+  filter(Year >= 1980, Year <= 2023)
+
+# --- Unión ---
+islandia_temp_suic <- inner_join(
+  temperaturas_Isl,
+  suicidios_Isl,
+  by = "Year"
+)
+
+# --- Scatter ---
+graf_islandia_temp_suic <- ggplot(
+  islandia_temp_suic,
+  aes(x = temp_media_anual, y = suicidios_totales)
+) +
+  geom_point(size = 3, color = "steelblue") +
+  geom_smooth(method = "lm", se = FALSE, color = "black", linewidth = 1.2) +
+  labs(
+    title = "Islandia: Suicidios vs Temperatura media anual",
+    subtitle = "1980–2023",
+    x = "Temperatura media anual (°C)",
+    y = "Número de suicidios"
+  ) +
+  theme_minimal(base_size = 12)
 
 print(graf_islandia_temp_suic)
 
@@ -842,4 +858,31 @@ islandia_temp_suic$suicidios_totales,
 use = "complete.obs"
 )
 cor_islandia
+```
+
+##### Por grupos de edad:
+
+```{r}
+# Unimos suicidios por grupo de edad con la temperatura anual en Islandia
+islandia_edad_temp <- islandia_edad_simpl %>%
+  inner_join(islandia_temp_anual, by = "Year")
+# Scatter plot: suicidios contra temperatura, con una línea por grupo de edad
+graf_islandia_temp_edad <- ggplot(
+  islandia_edad_temp,
+  aes(x = temp_media_anual,
+      y = Total_Deaths,
+      color = Grupo_edad)
+) +
+  geom_point(size = 2) +
+  geom_smooth(method = "lm", se = FALSE) +  
+  labs(
+    title = "Islandia: Suicidios vs Temperatura media anual",
+    subtitle = "Por grandes grupos de edad (1980–2023)",
+    x = "Temperatura media anual (°C)",
+    y = "Número de suicidios",
+    color = "Grupo de edad"
+  ) +
+  theme_minimal(base_size = 12)
+
+print(graf_islandia_temp_edad)
 ```
