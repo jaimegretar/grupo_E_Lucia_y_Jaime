@@ -53,8 +53,8 @@ graf_temp_islandia <- ggplot(df_resumen, aes(x = año, y = temp_media)) +
   geom_line(linewidth = 1.2, color = "#3498db") +
   geom_point(size = 3, color = "#3498db") +
   labs(
-    title = "Evolución de la Temperatura Media en Islandia",
-    subtitle = "Reykjavik 2018-2023",
+    title = "Evolución de la Temperatura Media en Reykjavik",
+    subtitle = "Reykjavik 1980-2023",
     x = "Año",
     y = "Temperatura Media (°C)"
   ) +
@@ -151,7 +151,7 @@ graf_temp_arizona <- ggplot(df_resumen_arizona, aes(x = Year, y = temp_media)) +
   geom_point(size = 3, color = "#f39c12") +
   labs(
     title = "Evolución de la Temperatura Media en Arizona",
-    subtitle = "Arizona 2018-2023",
+    subtitle = "Arizona 1980-2023",
     x = "Año",
     y = "Temperatura Media (°C)"
   ) +
