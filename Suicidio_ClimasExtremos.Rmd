@@ -541,7 +541,7 @@ ggplot(Arizona_temp_pib_anual, aes(x = Year)) +
 
 #### Islandia:
 
-En este gráfico vamos a observar la evolución del PIB per cápita en Islandia (barras, en miles de euros) junto con la temperatura media anual (línea roja) a lo largo del tiempo.
+En este gráfico vamos a observar la evolución del PIB per cápita en Islandia (barras, en miles de euros) junto con la temperatura media anual (línea roja) a lo largo del tiempo. 
 
 ```{r}
 ggplot(islandia_temp_pib_anual, aes(x = Year)) +
