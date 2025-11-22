@@ -102,7 +102,7 @@ Importacion de los datos de temperatura de Islandia (Reikiavik) en .json, en el 
 
 ```{r}
 # Importacion datos temperatura Islandia .json
-Islandia_temp_json <- fromJSON(file = "INPUT/DATA/Islandia/Temperatura/temperatura_reykjavik_2018_2023.json")
+Islandia_temp_json <- fromJSON(file = "INPUT/DATA/Islandia/Temperatura/temperatura_reykjavik_1980_2023.json")
 Islandia_temp_json %>%
   spread_all() #%>%
   #View()
@@ -239,7 +239,7 @@ Filtramos del Arizona_temp_csv los datos de temperatura media entre los años 19
 
 ```{r}
 Arizona_temp_filtrado <- Arizona_temp_csv %>%
-  filter(Date >= 201801 & Date <= 202312) %>%
+  filter(Date >= 201501 & Date <= 202312) %>%
   mutate(
     Year = Date %/% 100,
     Month = Date %% 100,
@@ -340,6 +340,24 @@ Arizona_temp_pib_anual <- Arizona_temp_anual %>%
 Hacemos un left_join con el PIB per cápita usando el año como clave, de forma que en islandia_temp_pib_anual tenemos, para cada año, la temperatura media anual y el PIB per cápita ordenados cronológicamente.
 
 ```{r}
+df_temp <- Islandia_temp_json %>% 
+  spread_all() %>% 
+  select(fecha, temperatura_media) %>% 
+  mutate(
+    fecha = as.Date(fecha),
+    temperatura_media = as.numeric(temperatura_media),
+    año = year(fecha)
+  )
+#Creamos data frame con la temperatura media anual en Islandia
+islandia_temp_anual <- df_temp %>%
+  group_by(año) %>%
+  summarise(
+    temp_media_anual = mean(temperatura_media, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  rename(Year = año)
+
+#La temp media a partir de df_temp que ya tenemos creada.
 islandia_1981 <- islandia_temp_anual %>%
   filter(Year>=1981)
 
@@ -402,16 +420,6 @@ print(graf_temp_arizona)
 #### Islandia:
 
 ```{r}
-#Grafica de temperatura de Islandia: ---------------------------------------------------------
-df_temp <- Islandia_temp_json %>% 
-  spread_all() %>% 
-  select(fecha, temperatura_media) %>% 
-  mutate(
-    fecha = as.Date(fecha),
-    temperatura_media = as.numeric(temperatura_media),
-    año = year(fecha)
-  )
-
 # Resumen anual ---------------------------------------------------------
 df_resumen <- df_temp %>% 
   group_by(año) %>% 
@@ -445,26 +453,44 @@ Se generaron gráficas que muestran la tasa de suicidios por año enfrentando ho
 #### Arizona:
 
 ```{r}
-arizona_suic_sexo <- arizona_suicidios %>%
-  filter(!is.na(Deaths), !is.na(Year)) %>%
+Arizona_l <- Arizona_2015_2023 %>%
+  pivot_longer(
+    cols = `2015`:`2023`,
+    names_to = "Year",
+    values_to = "Deaths"
+  ) %>%
+  mutate(
+    Year = as.numeric(Year),
+    Deaths = as.numeric(Deaths)
+  )
+
+
+arizona_suic_sexo_2015 <- Arizona_l %>%
+  filter(!is.na(Deaths)) %>% 
   group_by(Year, Sex) %>%
   summarise(Total_Deaths = sum(Deaths, na.rm = TRUE))
 
-# Crear gráfico
-graf_suicHF_ariz <- ggplot(arizona_suic_sexo, aes(x = Year, y = Total_Deaths, color = Sex, group = Sex)) +
+graf_suicHF_ariz <- ggplot(arizona_suic_sexo_2015,
+                                aes(x = Year, y = Total_Deaths, color = Sex, group = Sex)) +
   geom_line(size = 1.2) +
   geom_point(size = 2) +
-  scale_color_manual(values = c("Males" = "#3498db", "Females" = "#e74c3c"),
-                     labels = c("Females" = "Mujeres", "Males" = "Hombres")) +
-  labs(title = "Suicidios por Sexo en Arizona",
-       subtitle = "2018-2023",
-       x = "Año",
-       y = "Número de suicidios",
-       color = "Sexo") +
+  scale_color_manual(
+    values = c("Male" = "#3498db", "Female" = "#e74c3c"),
+    labels = c("Female" = "Mujeres", "Male" = "Hombres")
+  ) +
+  labs(
+    title = "Suicidios por Sexo en Arizona",
+    subtitle = "2015–2023",
+    x = "Año",
+    y = "Número de suicidios",
+    color = "Sexo"
+  ) +
   theme_minimal(base_size = 12) +
-  theme(plot.title = element_text(face = "bold", size = 16),
-        panel.grid.minor = element_blank(),
-        legend.position = "top")
+  theme(
+    plot.title = element_text(face = "bold", size = 16),
+    panel.grid.minor = element_blank(),
+    legend.position = "top"
+  )
 
 print(graf_suicHF_ariz)
 ```
@@ -530,8 +556,8 @@ En este gráfico vamos a observar la evolución del PIB per cápita en Islandia 
 ```{r}
 ggplot(islandia_temp_pib_anual, aes(x = Year)) +
   geom_col(aes(y = pib_per_capita / 1000, fill = "PIB per cápita"), alpha = 0.6) +
-  geom_line(aes(y = temp_media / 2, color = "Temperatura media anual"), linewidth = 1.1) +
-  geom_point(aes(y = temp_media / 2, color = "Temperatura media anual")) +
+  geom_line(aes(y = temp_media_anual / 2, color = "Temperatura media anual"), linewidth = 1.1) +
+  geom_point(aes(y = temp_media_anual / 2, color = "Temperatura media anual")) +
   scale_y_continuous(
     name = "PIB per cápita (miles de €)",
     sec.axis = sec_axis(~ . * 2, name = "Temperatura media anual (°C)")
@@ -552,18 +578,23 @@ Transformamos los datos de suicidios de Arizona e Islandia para agruparlos en cu
 Después, combinamos ambos data frames para generar visualizaciones comparativas.
 
 ```{r}
-arizona_edad_simpl <- arizona_suicidios %>%
+arizona_edad_simpl <- Arizona_2015_2023 %>%
+  # Convertimos de formato ancho a largo
+  pivot_longer(
+    cols = `2015`:`2023`,
+    names_to = "Year",
+    values_to = "Deaths"
+  ) %>%
+  mutate(Year = as.numeric(Year)) %>%
   filter(
     !is.na(Deaths),
-    !is.na(Year),
     Age_Group != "Total",
-    Year >= 2018, Year <= 2023
+    Year >= 2015, Year <= 2023
   ) %>%
-  
-  # sacamos el primer número de la categoría de edad
+  # Sacamos el primer número de la categoría de edad
   mutate(
     edad_inicio = as.numeric(str_extract(Age_Group, "\\d+")),
-    #clasificamos la edad de inicio en 4 grupos.
+    # Clasificamos la edad de inicio en 4 grupos
     Grupo_edad = case_when(
       edad_inicio < 20 ~ "0-19",
       edad_inicio < 40 ~ "20-39",
@@ -571,10 +602,10 @@ arizona_edad_simpl <- arizona_suicidios %>%
       TRUE            ~ "60+"
     )
   ) %>%
-  #eliminamos filas que no tengan una edad de inicio valida
+  # Eliminamos filas que no tengan una edad de inicio válida
   filter(!is.na(edad_inicio)) %>%
   group_by(Year, Grupo_edad) %>%
-  #calculamos el total de muertes por grupo de edad y año.
+  # Calculamos el total de muertes por grupo de edad y año
   summarise(
     Total_Deaths = sum(Deaths, na.rm = TRUE),
     .groups = "drop"
@@ -586,7 +617,7 @@ islandia_edad_simpl <- suicidios_Islandia %>% # Nota: Usamos 'suicidios_Islandia
   filter(
     Age != "Total",
     Sex == "Total",
-    Year >= 2018, Year <= 2023,
+    Year >= 1980, Year <= 2023,
     !is.na(value)
   ) %>%
   #creamos la columna de edad de inicio y grupo de edad.
@@ -745,11 +776,26 @@ Para ello se calcula, en cada país, la temperatura media anual y el total de su
 ##### Total:
 
 ```{r}
+arizona_suic_anual_2015 <- Arizona_2015_2023 %>%
+  pivot_longer(
+    cols = `2015`:`2023`,
+    names_to = "Year",
+    values_to = "Deaths"
+  ) %>%
+  mutate(
+    Year = as.numeric(Year),
+    Deaths = as.numeric(Deaths)
+  ) %>%
+  group_by(Year) %>%          # <-- ya no agrupamos por Age_Group
+  summarise(
+    suicidios_totales = sum(Deaths, na.rm = TRUE),
+    .groups = "drop"
+  )
 # --- Datos anuales ya existentes ---
 suicidios <- arizona_suic_anual_2015 %>% 
   filter(Year >= 2015, Year <= 2023)
 
-temperaturas <- arizona_temp_anual %>%
+temperaturas <- Arizona_temp_anual %>%
   filter(Year >= 2015, Year <= 2023)
 
 # --- Unión ---
@@ -777,8 +823,8 @@ graf_arizona_temp_suic_2015 <- ggplot(arizona_temp_suic_2015,
 print(graf_arizona_temp_suic_2015)
 
 # Correlación simple que es el coeficiente de correlación de Pearson.
-cor_arizona <- cor(arizona_temp_suic$temp_media_anual,
-                   arizona_temp_suic$suicidios_totales,
+cor_arizona <- cor(arizona_temp_suic_2015$temp_media_anual,
+                   arizona_temp_suic_2015$suicidios_totales,
                    use = "complete.obs") # complete.obs lo ponemos para evitar NAs
 cor_arizona # ver el valor
 ```
@@ -791,7 +837,7 @@ En Arizona, el coeficiente de correlación de Pearson entre temperatura media an
 ```{r}
 # Unimos la temperatura anual con los suicidios por grupo de edad en Arizona
 arizona_edad_temp_csv <- arizona_edad_simpl %>%
-  inner_join(arizona_temp_anual, by = "Year")
+  inner_join(Arizona_temp_anual, by = "Year")
 
 #Creamos gráfico
 graf_arizona_temp_edad_csv <- ggplot(
@@ -819,6 +865,15 @@ print(graf_arizona_temp_edad_csv)
 ##### Total:
 
 ```{r}
+islandia_suic_anual <- suicidios_Islandia %>%
+  filter(Year >= 1980, Year <= 2023,
+         Sex == "Total",        
+         !is.na(value)) %>%
+  group_by(Year) %>%
+  summarise(
+    suicidios_totales = sum(value, na.rm = TRUE),
+    .groups = "drop"
+  )
 # --- Datos anuales ya existentes ---
 suicidios_Isl <- islandia_suic_anual %>% 
   filter(Year >= 1980, Year <= 2023)
