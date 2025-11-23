@@ -836,7 +836,8 @@ print(graf_comp_edad_simpl_2015_2023)
 
 #### Por cada 100.000 habitantes:
 
-Por ultimo, se crea un grfico que muestra la tasa de suicidios por cada 100.000 habitantes en los dos lugares desde el 2015 hasta el 2023. Para facilitar la comparación se han ajustado los datos por poblacion de manera que las medidas sean equitativas para ambos. 
+Por ultimo, se crea un grfico que muestra la tasa de suicidios por cada 100.000 habitantes en los dos lugares desde el 2015 hasta el 2023.
+Para facilitar la comparación se han ajustado los datos por poblacion de manera que las medidas sean equitativas para ambos.
 Cada uno de los puntos del gráfico muestra la tasa de suicidios por cada 100.000 habitantes redondeada para una mayor claridad.
 
 ```{r}
@@ -924,7 +925,7 @@ print(graf_tasas_comparadas)
 
 ### 2.2.3. Analisis de correlacion entre temperatura y suicidios en Arizona e Islandia
 
-Por último, se explora de forma descriptiva si existe una posible relación lineal entre la temperatura media anual y el número total de suicidios en el periodo 2018–2023.
+Por último, se explora de forma descriptiva si existe una posible relación lineal entre la temperatura media anual y el número total de suicidios en el periodo 2015–2023.
 Para ello se calcula, en cada país, la temperatura media anual y el total de suicidios por año, y se representa un diagrama de dispersión con recta de regresión, junto con el coeficiente de correlación de Pearson.
 
 #### Arizona:
@@ -1070,7 +1071,8 @@ use = "complete.obs"
 cor_islandia
 ```
 
-En Islandia, el coeficiente de correlación de Pearson entre temperatura media anual y número de suicidios es muy cercano a cero (al igual que en el caso de Arizona), lo que indica que, con los datos disponibles, **no se observa una relación lineal fuerte** entre ambas variables. La ligera correlación negativa sugiere que podría haber una tendencia mínima de disminución de suicidios cuando la temperatura aumenta, pero el valor es demasiado bajo para considerarlo significativa.
+En Islandia, el coeficiente de correlación de Pearson entre temperatura media anual y número de suicidios es muy cercano a cero (al igual que en el caso de Arizona), lo que indica que, con los datos disponibles, **no se observa una relación lineal fuerte** entre ambas variables.
+La ligera correlación negativa sugiere que podría haber una tendencia mínima de disminución de suicidios cuando la temperatura aumenta, pero el valor es demasiado bajo para considerarlo significativa.
 
 ##### Por grupos de edad:
 
@@ -1125,6 +1127,20 @@ A continuación se muestran las fuentes de información que se han consultado pa
 
         -   [NCEI.Monitoring.Info\@noaa.gov](mailto:NCEI.Monitoring.Info@noaa.gov){.email}. (s. f.). Climate at a Glance \| Statewide Time Series \| National Centers for Environmental Information (NCEI). <https://www.ncei.noaa.gov/access/monitoring/climate-at-a-glance/statewide/time-series/2/tavg/1/0/1895-2025>\`
 
+    -   PIB:
+
+        -   PIB per Capita de Arizona. (s. f.). DatosMacro.com. <https://datosmacro.expansion.com/pib/usa-estados/arizona>
+
 -   **Islandia**
 
-    -   (Aquí agregarías tus fuentes para Islandia)
+    -   Temperatura:
+
+        -   Weather API. (s. f.). Icelandic Meteorological Office (IMO). <https://api.vedur.is/weather/>
+
+    -   Suicidios:
+
+        -   Deaths by cause of death. (s. f.). Statistics Iceland (Hagstofa Íslands). <https://px.hagstofa.is/pxen/pxweb/en/Ibuar/Ibuar__Faeddirdanir__danir__danarmein/MAN05302.px/>
+
+    -   PIB:
+
+        -   PIB a precios de mercado de Islandia. (s. f.). DatosMacro.com. <https://datosmacro.expansion.com/pib/islandia>
