@@ -11,7 +11,7 @@ editor_options:
     wrap: sentence
 ---
 
-![](IMAGES/Desierto y nieve en contraste.png)
+![](IMAGES/Desierto%20y%20nieve%20en%20contraste.png)
 
 # INTRODUCCIÓN
 
@@ -104,7 +104,7 @@ else:
     save(monthly, OUT_PREFIX + "_mensual")
 ```
 
-Importacion de los datos de temperatura de Islandia (Reikiavik) en .json, en el periodo del 2015-2023:
+Importacion de los datos de temperatura de Islandia (Reikiavik) en .json, en el periodo del 1980-2023:
 
 ```{r}
 # Importacion datos temperatura Islandia .json
@@ -138,7 +138,8 @@ datos <- read_delim(
 #View(datos)
 ```
 
-A continuación, con `mutate(linea = .[[1]])` creamos una nueva columna llamada linea que contiene una copia de toda la primera columna del data frame original, y se toma la primera columna de datos. Obteniendo asi un data frame con 2 columnas: la original y "linea" que tiene la misma información.
+A continuación, con `mutate(linea = .[[1]])` creamos una nueva columna llamada linea que contiene una copia de toda la primera columna del data frame original, y se toma la primera columna de datos.
+Obteniendo asi un data frame con 2 columnas: la original y "linea" que tiene la misma información.
 
 Utilizamos `separate()` para dividir la columna "linea" en varias columnas nuevas: `into =c(...)` define los nombres de las nuevas columnas + `sep = ',(?=(?:[^"]*"[^"]*")*[^"]*$)'` se usa para separar las columnas por comas que no esten dentro de las dobles comillas. `extra = "merge"` se ussa para que si hay mas columnas de las esperadas, todo eso se junta en una ultima columna extra para evitar que de error a la hora de ejecutarlo. Luego, con `mutate(across(everything(), ~str_replace_all(., '"', '')))` se aplica la misma función a todas las columnas y elimina las dobles comillas.
 A continuación, con `select(-1)` se elimina la primera columna original del data frame que contenia la linea completa, y con `slice(-1)` se elimina la primera fila que contenia los encabezados del csv y ya no son necesarios.
@@ -387,7 +388,7 @@ A continuación se muestran las gráficas obtenidas a partir de los datos import
 
 Gráficas individuales.
 
-Primeramente se obtuveron gráficas individuales para cada lugar con respecto a la variación de temperatura y suicidios.
+En primer lugar, se obtuvieron gráficas individuales para cada lugar con respecto a la variación de temperatura y suicidios.
 
 ### 2.1.1. Gráficas de temperatura
 
@@ -516,7 +517,7 @@ print(graf_suicHF_ariz)
 
 Utilizando el primer csv que contiene datos de los suicios por año y separados con región, creamos un grafico en que visualicemos la cantidad de suicidios en cada region desde 2015 hasta 2023.
 
-Se puede observar que durante esos 9 años, la región de Maricopa fue la que tuvo un mayor indice de suicidios. 
+Se puede observar que durante esos 9 años, la región de Maricopa fue la que tuvo un mayor indice de suicidios.
 
 ```{r}
 region_suicidios_2015 <- Arizona_l %>%
