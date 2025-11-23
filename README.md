@@ -171,3 +171,6 @@ suicidio sin considerar el conjunto de variables que intervienen en este
 fenómeno.
 
 </p>
+
+***
+Autores: Jaime Miguel y Lucía Toimil
