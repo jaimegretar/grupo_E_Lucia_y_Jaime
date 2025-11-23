@@ -89,11 +89,10 @@ A continuación se muestra la organización y estructura del proyecto:
 -   `Environment.RData`
 -   `grupo_E_Lucia_y_Jaime.Rproj`
 -   `importacionDatos.R`
-```
 
 # Temperaturas extremas: Arizona y Reikiavik:
 
-<p align="justify">
+<div style="text-align: justify;">
 
 El análisis de la temperatura media anual en Arizona e Islandia
 constituye uno de los ejes centrales de este estudio, ya que permite
