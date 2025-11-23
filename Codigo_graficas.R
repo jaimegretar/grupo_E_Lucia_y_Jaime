@@ -419,6 +419,89 @@ print(graf_comp_edad_simpl_2015_2023)
 
 
 
+#================================================================================
+# SUICIDIOS POR 100.000 habitantes
+#================================================================================
+# Arizona
+arizona_tasas <- Arizona_2015_2023 %>%
+  # Convertir de formato ancho a largo
+  pivot_longer(
+    cols = `2015`:`2023`,
+    names_to = "Year",
+    values_to = "Deaths"
+  ) %>%
+  mutate(Year = as.numeric(Year)) %>%
+  # Sumar todas las muertes por año (todos los condados, sexos y edades)
+  group_by(Year) %>%
+  summarise(
+    Total_Deaths = sum(Deaths, na.rm = TRUE)
+  ) %>%
+  mutate(
+    Region = "Arizona",
+    Poblacion = 7400000,  # Población aproximada
+    Tasa_100k = (Total_Deaths / Poblacion) * 100000
+  )
+
+# Islandia
+suicidios_Islandia <- df %>%
+  mutate(Year = as.numeric(Year)) %>%
+  filter(Year >= 2015 & Year <= 2023)
+
+islandia_tasas <- suicidios_Islandia %>%
+  filter(Age == "Total") %>%  # Solo totales para evitar duplicar
+  group_by(Year) %>%
+  summarise(
+    Total_Deaths = sum(value, na.rm = TRUE)
+  ) %>%
+  mutate(
+    Region = "Islandia",
+    Poblacion = 380000,  # Población aproximada
+    Tasa_100k = (Total_Deaths / Poblacion) * 100000
+  )
+
+comparacion_tasas <- arizona_tasas %>%
+  select(Year, Tasa_100k_Arizona = Tasa_100k) %>%
+  inner_join(
+    islandia_tasas %>% select(Year, Tasa_100k_Islandia = Tasa_100k),
+    by = "Year"
+  )
+
+# colnames(comparacion_tasas)
+
+comparacion_tasas_100k <- comparacion_tasas %>%
+  pivot_longer(
+    names_to = "Region",
+    values_to = "Valor",
+    cols = c ("Tasa_100k_Arizona", "Tasa_100k_Islandia")
+  ) %>%
+  mutate(
+    Region = case_when(
+      Region == "Tasa_100k_Arizona" ~ "Arizona",
+      Region == "Tasa_100k_Islandia" ~ "Islandia",
+      TRUE ~ Region
+    )
+  )
+
+graf_tasas_comparadas <- ggplot(comparacion_tasas_100k, aes(x = Year, y = Valor, color = Region, group = Region)) +
+  geom_line(linewidth = 1.2) +
+  geom_point(size = 3) +
+  geom_text(aes(label = round(Valor, 1)), vjust = -1, size = 3) +
+  scale_x_continuous(breaks = 2015:2023) +
+  labs(
+    title = "Tasa de Suicidios por 100,000 Habitantes",
+    subtitle = "Comparación ajustada por población (2015-2023)",
+    x = "Año",
+    y = "Tasa por 100,000 hab.",
+    color = "Región"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold", size = 14),
+    legend.position = "bottom",
+    panel.grid.minor = element_blank()
+  )
+
+print(graf_tasas_comparadas)
 
 #================================================================================
 # SCATER PLOT: Temperatura y Suicidios

@@ -374,7 +374,8 @@ A continuación se muestran las gráficas obtenidas a partir de los datos import
 
 ## 2.1. Gráficas individuales
 
-Gráficas individuales Primeramente se obtuveron gráficas individuales para cada lugar con respecto a la variación de temperatura y suicidios.
+Gráficas individuales.
+Primeramente se obtuveron gráficas individuales para cada lugar con respecto a la variación de temperatura y suicidios.
 
 ### 2.1.1. Gráficas de temperatura
 
@@ -550,7 +551,7 @@ print(graf_suicHF_isl)
 
 ## 2.2. Gráficas combinadas/comparativas
 
-### 2.2.1. Comparación de PIB, suicidios y temperatura.
+### 2.2.1. Comparación de PIB, suicidios y temperatura
 
 #### Arizona:
 
@@ -601,7 +602,7 @@ ggplot(islandia_temp_pib_anual, aes(x = Year)) +
   theme(legend.position = "bottom")
 ```
 
-### 2.2.2. Comparación de Suicidios por Grupos de Edad:
+### 2.2.2. Comparación de Suicidios
 
 Transformamos los datos de suicidios de Arizona e Islandia para agruparlos en cuatro categorías de edad simplificadas: "0-19", "20-39", "40-59" y "60+".
 Después, combinamos ambos data frames para generar visualizaciones comparativas.
@@ -676,6 +677,8 @@ comparacion_edad_simpl <- bind_rows(arizona_edad_simpl, islandia_edad_simpl) %>%
                         levels = c("0-19", "20-39", "40-59", "60+"))
   )
 ```
+
+#### Animación:
 
 Generamos una animación para visualizar la evolución anual de los suicidios por grupo de edad, facilitando la comprensión de las tendencias.
 Sin embargo, debido a la limitada disponibilidad y transparencia de los datos en Estados Unidos, los registros de Arizona solo están disponibles a partir de 2015, mientras que Islandia cuenta con datos desde 1980.
@@ -765,7 +768,9 @@ knitr::include_graphics("suicidios_grupos_edad_Arizona_Islandia.gif")
 
 A partir de los datos simplificados, generamos un gráfico de líneas para comparar la evolución anual de los suicidios por grupo de edad en Arizona e Islandia.
 
-#### 1980 - 2023
+#### 1980 - 2023:
+
+Primero hacemos una comparación desde el año 1980, aunque en Arizona solo tengamos datos desde el 2015.
 
 ```{r}
 # Hacemos el gráfico comparativo de suicidios por grupo de edad en ambos paises desde 1980.
@@ -794,7 +799,9 @@ graf_comp_edad_simpl_1980_2023 <- ggplot(
 print(graf_comp_edad_simpl_1980_2023) #grafico de suicidios por grupo de edad en los dos sitios
 ```
 
-#### 2015 - 2023
+#### 2015 - 2023:
+
+Ajustamos el rango de años desde el 2015 hasta el 2023 para tener una mejor comparación de los suicidios por grupos de edad entre esos años.
 
 ```{r}
 # Filtramos solo los años 2015–2023
@@ -827,10 +834,96 @@ graf_comp_edad_simpl_2015_2023 <- ggplot(
 print(graf_comp_edad_simpl_2015_2023)
 ```
 
-### 2.2.3. Analisis de correlacion entre temperatura y suicidios en Arizona e Islandia:
+#### Por cada 100.000 habitantes:
 
-Por último, se explora de forma descriptiva si existe una posible relación lineal entre la temperatura media anual y el número total de suicidios en el periodo 2018–2023.
-Para ello se calcula, en cada país, la temperatura media anual y el total de suicidios por año, y se representa un diagrama de dispersión con recta de regresión, junto con el coeficiente de correlación de Pearson.
+Por ultimo, se crea un grfico que muestra la tasa de suicidios por cada 100.000 habitantes en los dos lugares desde el 2015 hasta el 2023. Para facilitar la comparación se han ajustado los datos por poblacion de manera que las medidas sean equitativas para ambos. 
+Cada uno de los puntos del gráfico muestra la tasa de suicidios por cada 100.000 habitantes redondeada para una mayor claridad.
+
+```{r}
+# Arizona
+arizona_tasas <- Arizona_2015_2023 %>%
+  # Convertir de formato ancho a largo
+  pivot_longer(
+    cols = `2015`:`2023`,
+    names_to = "Year",
+    values_to = "Deaths"
+  ) %>%
+  mutate(Year = as.numeric(Year)) %>%
+  # Sumar todas las muertes por año (todos los condados, sexos y edades)
+  group_by(Year) %>%
+  summarise(
+    Total_Deaths = sum(Deaths, na.rm = TRUE)
+  ) %>%
+  mutate(
+    Region = "Arizona",
+    Poblacion = 7400000,  # Población aproximada
+    Tasa_100k = (Total_Deaths / Poblacion) * 100000
+  )
+
+# Islandia
+suicidios_Islandia <- df %>%
+  mutate(Year = as.numeric(Year)) %>%
+  filter(Year >= 2015 & Year <= 2023)
+
+islandia_tasas <- suicidios_Islandia %>%
+  filter(Age == "Total") %>%  # Solo totales para evitar duplicar
+  group_by(Year) %>%
+  summarise(
+    Total_Deaths = sum(value, na.rm = TRUE)
+  ) %>%
+  mutate(
+    Region = "Islandia",
+    Poblacion = 380000,  # Población aproximada
+    Tasa_100k = (Total_Deaths / Poblacion) * 100000
+  )
+
+comparacion_tasas <- arizona_tasas %>%
+  select(Year, Tasa_100k_Arizona = Tasa_100k) %>%
+  inner_join(
+    islandia_tasas %>% select(Year, Tasa_100k_Islandia = Tasa_100k),
+    by = "Year"
+  )
+
+# colnames(comparacion_tasas)
+
+comparacion_tasas_100k <- comparacion_tasas %>%
+  pivot_longer(
+    names_to = "Region",
+    values_to = "Valor",
+    cols = c ("Tasa_100k_Arizona", "Tasa_100k_Islandia")
+  ) %>%
+  mutate(
+    Region = case_when(
+      Region == "Tasa_100k_Arizona" ~ "Arizona",
+      Region == "Tasa_100k_Islandia" ~ "Islandia",
+      TRUE ~ Region
+    )
+  )
+
+graf_tasas_comparadas <- ggplot(comparacion_tasas_100k, aes(x = Year, y = Valor, color = Region, group = Region)) +
+  geom_line(linewidth = 1.2) +
+  geom_point(size = 3) +
+  geom_text(aes(label = round(Valor, 1)), vjust = -1, size = 3) +
+  scale_x_continuous(breaks = 2015:2023) +
+  labs(
+    title = "Tasa de Suicidios por 100,000 Habitantes",
+    subtitle = "Comparación ajustada por población (2015-2023)",
+    x = "Año",
+    y = "Tasa por 100,000 hab.",
+    color = "Región"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold", size = 14),
+    legend.position = "bottom",
+    panel.grid.minor = element_blank()
+  )
+
+print(graf_tasas_comparadas)
+```
+
+### 2.2.3. Analisis de correlacion entre temperatura y suicidios en Arizona e Islandia
+
 Por último, se explora de forma descriptiva si existe una posible relación lineal entre la temperatura media anual y el número total de suicidios en el periodo 2018–2023.
 Para ello se calcula, en cada país, la temperatura media anual y el total de suicidios por año, y se representa un diagrama de dispersión con recta de regresión, junto con el coeficiente de correlación de Pearson.
 
@@ -883,7 +976,7 @@ graf_arizona_temp_suic_2015 <- ggplot(arizona_temp_suic_2015,
   ) +
   theme_minimal(base_size = 12)
 
-print(graf_arizona_temp_suic_2015)
+suppressMessages(print(graf_arizona_temp_suic_2015))
 
 # Correlación simple que es el coeficiente de correlación de Pearson.
 cor_arizona <- cor(arizona_temp_suic_2015$temp_media_anual,
@@ -892,7 +985,6 @@ cor_arizona <- cor(arizona_temp_suic_2015$temp_media_anual,
 cor_arizona # ver el valor
 ```
 
-En Arizona, el coeficiente de correlación de Pearson entre temperatura media anual y número de suicidios es muy cercano a cero, lo que indica que, con los datos disponibles, **no se observa una relación lineal clara** entre ambas variables.
 En Arizona, el coeficiente de correlación de Pearson entre temperatura media anual y número de suicidios es muy cercano a cero, lo que indica que, con los datos disponibles, **no se observa una relación lineal clara** entre ambas variables.
 
 ##### Por grupos de edad:
@@ -920,7 +1012,7 @@ graf_arizona_temp_edad_csv <- ggplot(
   ) +
   theme_minimal(base_size = 12)
 
-print(graf_arizona_temp_edad_csv)
+suppressMessages(print(graf_arizona_temp_edad_csv))
 ```
 
 #### Islandia:
@@ -966,7 +1058,7 @@ graf_islandia_temp_suic <- ggplot(
   ) +
   theme_minimal(base_size = 12)
 
-print(graf_islandia_temp_suic)
+suppressMessages(print(graf_islandia_temp_suic))
 
 # Coeficiente de correlación de Pearson
 
@@ -977,6 +1069,8 @@ use = "complete.obs"
 )
 cor_islandia
 ```
+
+En Islandia, el coeficiente de correlación de Pearson entre temperatura media anual y número de suicidios es muy cercano a cero (al igual que en el caso de Arizona), lo que indica que, con los datos disponibles, **no se observa una relación lineal fuerte** entre ambas variables. La ligera correlación negativa sugiere que podría haber una tendencia mínima de disminución de suicidios cuando la temperatura aumenta, pero el valor es demasiado bajo para considerarlo significativa.
 
 ##### Por grupos de edad:
 
@@ -1002,7 +1096,7 @@ graf_islandia_temp_edad <- ggplot(
   ) +
   theme_minimal(base_size = 12)
 
-print(graf_islandia_temp_edad)
+suppressMessages(print(graf_islandia_temp_edad))
 ```
 
 # CONCLUSIÓN
