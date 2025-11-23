@@ -47,6 +47,8 @@ library(rjson)
 library(tidyjson)
 library(plotly)
 library(dplyr)
+library(gganimate)
+library(gifski)
 ```
 
 ## 1.2. Obtención de datos de temperatura y suicidio (Islandia y Arizona)
@@ -239,7 +241,7 @@ Filtramos del Arizona_temp_csv los datos de temperatura media entre los años 19
 
 ```{r}
 Arizona_temp_filtrado <- Arizona_temp_csv %>%
-  filter(Date >= 201501 & Date <= 202312) %>%
+  filter(Date >= 198001 & Date <= 202312) %>%
   mutate(
     Year = Date %/% 100,
     Month = Date %% 100,
@@ -452,6 +454,8 @@ Se generaron gráficas que muestran la tasa de suicidios por año enfrentando ho
 
 #### Arizona:
 
+##### Por sexo:
+
 ```{r}
 Arizona_l <- Arizona_2015_2023 %>%
   pivot_longer(
@@ -495,6 +499,30 @@ graf_suicHF_ariz <- ggplot(arizona_suic_sexo_2015,
 print(graf_suicHF_ariz)
 ```
 
+##### Por región:
+
+```{r}
+region_suicidios_2015 <- Arizona_l %>%
+  group_by(Year, County) %>%
+  summarise(Promedio_Deaths = mean(Deaths, na.rm = TRUE), .groups = "drop") %>%
+  group_by(Year) %>%
+  slice_max(Promedio_Deaths, n = 15) %>%
+  ungroup()
+
+graf_region_arizona <- ggplot(region_suicidios_2015, aes(x = reorder(County, Promedio_Deaths), y = Promedio_Deaths)) +
+  geom_col(fill = "#e74c3c") +
+  facet_wrap(~Year, scales = "free_y") +
+  coord_flip() +
+  labs(
+    title = "Top 15 Condados de Arizona por Suicidios",
+    x = "Condado",
+    y = "Número promedio de suicidios"
+  ) +
+  theme_minimal()
+
+print(graf_region_arizona)
+```
+
 #### Islandia:
 
 ```{r}
@@ -530,7 +558,7 @@ Con este gráfico vamos a ver, para Arizona, cómo evoluciona el PIB per cápita
 Nos permite comparar visualmente si los cambios económicos y los cambios en la temperatura siguen patrones similares o no en el mismo periodo de tiempo.
 
 ```{r}
-#Graficos de visualizacion con PIB:
+#Grafico de visualizacion con PIB Arizona:
 ggplot(Arizona_temp_pib_anual, aes(x = Year)) +
   geom_col(aes(y = pib_per_capita / 1000, fill = "PIB per cápita"), alpha = 0.6) +
   geom_line(aes(y = temp_media_anual / 2, color = "Temperatura media anual"), linewidth = 1.1) +
@@ -554,6 +582,7 @@ ggplot(Arizona_temp_pib_anual, aes(x = Year)) +
 En este gráfico vamos a observar la evolución del PIB per cápita en Islandia (barras, en miles de euros) junto con la temperatura media anual (línea roja) a lo largo del tiempo.
 
 ```{r}
+#Grafico de visualizacion con PIB Islandia:
 ggplot(islandia_temp_pib_anual, aes(x = Year)) +
   geom_col(aes(y = pib_per_capita / 1000, fill = "PIB per cápita"), alpha = 0.6) +
   geom_line(aes(y = temp_media_anual / 2, color = "Temperatura media anual"), linewidth = 1.1) +
@@ -653,18 +682,50 @@ Sin embargo, debido a la limitada disponibilidad y transparencia de los datos en
 Por esta razón, en la animación aparece el aviso de “No hay datos” para Arizona en los años anteriores a 2015, mientras que Islandia muestra información continua durante todo el periodo.
 
 ```{r, eval=FALSE}
-library(gganimate)
-library(gifski)
-
 # Realizamos la animación con gganimate.
+# Años del dataset
+years_all <- sort(unique(comparacion_edad_simpl$Year))
+# Años con datos de Arizona
+years_arizona <- sort(unique(
+  comparacion_edad_simpl$Year[comparacion_edad_simpl$Pais == "Arizona"]
+))
+# Años sin datos de Arizona (pero con Islandia)
+years_no_data_arizona <- setdiff(years_all, years_arizona)
+
+niveles_edad <- levels(factor(comparacion_edad_simpl$Grupo_edad))
+x_centro <- niveles_edad[ceiling(length(niveles_edad) / 2)]
+
+max_arizona <- comparacion_edad_simpl %>%
+  filter(Pais == "Arizona") %>%
+  summarise(maxT = max(Total_Deaths, na.rm = TRUE)) %>%
+  pull(maxT)
+
+no_data_df <- data.frame(
+  Pais  = "Arizona",
+  Year  = years_no_data_arizona,
+  x_lab = x_centro,
+  y_pos = max_arizona / 2,
+  label = "No hay datos"
+)
+
 p_anim_edad <- ggplot(
   comparacion_edad_simpl,
   aes(x = Grupo_edad,
       y = Total_Deaths,
       fill = Grupo_edad)
 ) +
+  #Para podeer colocarlo para que se vea bien.
   geom_col(width = 0.7) +
-  facet_wrap(~ Pais, scales = "free_y") +   # free_y para que cada país tenga su propia escala y se vea mejor
+  geom_text(
+    data = no_data_df,
+    aes(x = x_lab, y = y_pos, label = label),
+    inherit.aes = FALSE,
+    size = 8,         
+    fontface = "bold",
+    hjust = 0.5,
+    vjust = 0.5
+  ) +
+  facet_wrap(~ Pais, scales = "free_y") +
   labs(
     title = "Suicidios por grupos de edad",
     subtitle = "Año: {closest_state}",
@@ -684,20 +745,22 @@ p_anim_edad <- ggplot(
     state_length = 1
   ) +
   ease_aes("linear")
-
-# Generamos la animacion.
+#Para cambiar la velocidad y otros ajustes.
 anim_edad <- animate(
   p_anim_edad,
-  nframes = 120,
-  fps = 6,
+  nframes = 200,   
+  fps =5 ,         
   width = 900,
   height = 500,
   renderer = gifski_renderer()
 )
 
 anim_edad
-# Para guardar la imagen quitar el hastag, pero esque se me guarda cada vez que ejecuto por eso lo comento.
-# anim_save("suicidios_grupos_edad_Arizona_Islandia.gif", animation = anim_edad)
+#anim_save("suicidios_grupos_edad_Arizona_Islandia.gif", animation = anim_edad)
+```
+
+```{r, echo=FALSE, out.width='600px'}
+knitr::include_graphics("suicidios_grupos_edad_Arizona_Islandia.gif")
 ```
 
 A partir de los datos simplificados, generamos un gráfico de líneas para comparar la evolución anual de los suicidios por grupo de edad en Arizona e Islandia.
@@ -786,7 +849,7 @@ arizona_suic_anual_2015 <- Arizona_2015_2023 %>%
     Year = as.numeric(Year),
     Deaths = as.numeric(Deaths)
   ) %>%
-  group_by(Year) %>%          # <-- ya no agrupamos por Age_Group
+  group_by(Year) %>%          
   summarise(
     suicidios_totales = sum(Deaths, na.rm = TRUE),
     .groups = "drop"
@@ -805,7 +868,7 @@ arizona_temp_suic_2015 <- inner_join(
   by = "Year"
 )
 
-colnames(arizona_temp_suic_2015)
+# colnames(arizona_temp_suic_2015)
 
 # --- Scatter ---
 graf_arizona_temp_suic_2015 <- ggplot(arizona_temp_suic_2015,
