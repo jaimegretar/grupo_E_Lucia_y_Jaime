@@ -380,7 +380,7 @@ islandia_temp_pib_anual <- islandia_1981 %>%
   arrange(Year)
 ```
 
-# GRÁFICAS
+# GRÁFICAS Y RESULTADOS
 
 A continuación se muestran las gráficas obtenidas a partir de los datos importados y filtrados.
 
