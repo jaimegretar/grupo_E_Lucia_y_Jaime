@@ -1,9 +1,3 @@
----
-editor_options: 
-  markdown: 
-    wrap: 72
----
-
 <img src="./IMAGES/escudo.png" width="30%" style="float:left"/>
 
 # Proyecto: Bajo el Sol y el Frío Extremo — Analizando la Influencia Climática Extrema en la Tasa de Suicidio.
@@ -67,7 +61,7 @@ A continuación se muestra la organización y estructura del proyecto:
     - `suicidios_grupos_edad_Arizona_Islandia.gif`
 - `INPUT/DATA/`
     - `Islandia/`
-      - `Salud/`
+        - `Salud/`
             - `suicidios_islandia.json`
         - `Temperatura/`
             - `temperatura_reykjavik_2018_....csv`
@@ -86,7 +80,6 @@ A continuación se muestra la organización y estructura del proyecto:
             - `data.json`
         - `Pib/`
             - `pib_arizona.csv`
-```
 -   `.gitignore`
 -   `Codigo_graficas.R`
 -   `LICENSE`
@@ -96,6 +89,7 @@ A continuación se muestra la organización y estructura del proyecto:
 -   `Environment.RData`
 -   `grupo_E_Lucia_y_Jaime.Rproj`
 -   `importacionDatos.R`
+```
 
 # Temperaturas extremas: Arizona y Reikiavik:
 
