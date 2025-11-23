@@ -174,6 +174,24 @@ Arizona_temp_pib_anual <- Arizona_temp_anual %>%
 View(Arizona_temp_pib_anual)
 
 #ISLANDIA ---------------------------------------------------------------------
+df_temp <- Islandia_temp_json %>% 
+  spread_all() %>% 
+  select(fecha, temperatura_media) %>% 
+  mutate(
+    fecha = as.Date(fecha),
+    temperatura_media = as.numeric(temperatura_media),
+    año = year(fecha)
+  )
+
+#Creamos data frame con la temperatura media anual en Islandia
+islandia_temp_anual <- df_temp %>%
+  group_by(año) %>%
+  summarise(
+    temp_media_anual = mean(temperatura_media, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  rename(Year = año)
+
 islandia_1981 <- islandia_temp_anual %>%
   filter(Year>=1981)
 
@@ -182,39 +200,6 @@ islandia_temp_pib_anual <- islandia_1981 %>%
   arrange(Year)
 view(islandia_temp_pib_anual)
 
-#Graficos de visualizacion con PIB:
-ggplot(Arizona_temp_pib_anual, aes(x = Year)) +
-  geom_col(aes(y = pib_per_capita / 1000, fill = "PIB per cápita"), alpha = 0.6) +
-  geom_line(aes(y = temp_media_anual / 2, color = "Temperatura media anual"), linewidth = 1.1) +
-  geom_point(aes(y = temp_media_anual / 2, color = "Temperatura media anual")) +
-  scale_y_continuous(
-    name = "PIB per cápita (miles de €)",
-    sec.axis = sec_axis(~ . * 2, name = "Temperatura media anual (°C)")
-  ) +
-  scale_fill_manual(name = "", values = c("PIB per cápita" = "steelblue")) +
-  scale_color_manual(name = "", values = c("Temperatura media anual" = "red")) +
-  labs(
-    title = "Arizona: PIB per cápita y temperatura media anual",
-    x = "Año"
-  ) +
-  theme_minimal() +
-  theme(legend.position = "bottom")
 
-ggplot(islandia_temp_pib_anual, aes(x = Year)) +
-  geom_col(aes(y = pib_per_capita / 1000, fill = "PIB per cápita"), alpha = 0.6) +
-  geom_line(aes(y = temp_media / 2, color = "Temperatura media anual"), linewidth = 1.1) +
-  geom_point(aes(y = temp_media / 2, color = "Temperatura media anual")) +
-  scale_y_continuous(
-    name = "PIB per cápita (miles de €)",
-    sec.axis = sec_axis(~ . * 2, name = "Temperatura media anual (°C)")
-  ) +
-  scale_fill_manual(name = "", values = c("PIB per cápita" = "steelblue")) +
-  scale_color_manual(name = "", values = c("Temperatura media anual" = "red")) +
-  labs(
-    title = "Islandia: PIB per cápita y temperatura media anual",
-    x = "Año"
-  ) +
-  theme_minimal() +
-  theme(legend.position = "bottom")
 
 
