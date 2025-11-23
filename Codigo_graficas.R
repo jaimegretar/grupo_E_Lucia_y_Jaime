@@ -356,7 +356,7 @@ anim_edad <- animate(
 )
 
 anim_edad
-#anim_save("suicidios_grupos_edad_Arizona_Islandia.gif", animation = anim_edad)
+#anim_save("IMAGES/suicidios_grupos_edad_Arizona_Islandia.gif", animation = anim_edad)
 
 
 # 1980 - 2023
@@ -443,11 +443,11 @@ arizona_tasas <- Arizona_2015_2023 %>%
   )
 
 # Islandia
-suicidios_Islandia <- df %>%
+suicidios_Islandia_2015 <- df %>%
   mutate(Year = as.numeric(Year)) %>%
   filter(Year >= 2015 & Year <= 2023)
 
-islandia_tasas <- suicidios_Islandia %>%
+islandia_tasas <- suicidios_Islandia_2015 %>%
   filter(Age == "Total") %>%  # Solo totales para evitar duplicar
   group_by(Year) %>%
   summarise(
