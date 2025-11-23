@@ -16,10 +16,9 @@ Este proyecto analiza esta posible asociación comparando dos regiones con clima
 Analizar la posible relación entre las condiciones climáticas y la salud mental, evaluando como el clima podría influir en la tasa de suicidios en Islandia y Arizona.
 
 ### Objetivos especificos
-- Comparar la tasa de suicidios en Islandia y Arizona en relación con sus caracteristicas climáticas.
-- Comparar las tasas de suicidios entre hombres y mujeres en ambos lugares
-- Estudiar el impacto de episodios extremos de temperatura con suicidios posteriores a ellos.
-- Analizar efectos estacionales en las tasas de suicidios.
+-   Analizar la evolución de las temperaturas en Islandia y Arizona para identificar tendencias climáticas.
+-   Comparar las tasas de suicidio por año y por sexo en ambos lugares.
+-   Estudiar la influencia de factores demográficos y socioeconómicos en las variaciones de suicidio.
   
 ## Estructura del proyecto:
 A continuación se muestra la organización y estructura del proyecto:
@@ -31,6 +30,7 @@ A continuación se muestra la organización y estructura del proyecto:
     - `uni_burgos.png`
     - `tem_arizona.png`
     - `tem_islandia.png`
+    - `suicidios_grupos_edad_Arizona_Islandia.gif`
 - `INPUT/DATA/`
     - `Islandia/`
       - `Salud/`
@@ -39,6 +39,8 @@ A continuación se muestra la organización y estructura del proyecto:
         - `Temperatura/`
             - `temperatura_reykjavik_2018_....csv`
             - `temperatura_reykjavik_2018_....jso `
+            - `temperatura_reykjavik_1980_....csv`
+            - `temperatura_reykjavik_1980_....jso `
         - `Pib/`
             - `pib_arizona.csv`
         
@@ -63,7 +65,6 @@ A continuación se muestra la organización y estructura del proyecto:
 - `grupo_E_Lucia_y_Jaime.Rproj`
 - `guardado_graficos.R`
 - `importacionDatos.R`
-- `suicidios_grupos_edad_Arizona_Islandia.gif`
 
 # Temperaturas extremas: Arizona y Reikiavik:
 <p align="justify">
